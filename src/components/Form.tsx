@@ -2,7 +2,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useEffect, useState, useContext } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 
-import Button from "@/components/Button";
+import Add from "@/components/icons/Add";
+import Button from "@/components/ui/Button";
 import { TodoContext } from "@/context/TodoContext";
 import type { FormData } from "@/utils/interfaces/FormData";
 import { getTodos, addTodo } from "@/utils/actions/Database";
@@ -66,7 +67,7 @@ const Form = () => {
           className="w-full bg-[#1f2937] text-white p-3 rounded-[11px] outline-none border-none placeholder:text-sm"
         />
 
-        <Button isValid={isValid} isSubmitting={isSubmitting} />
+        <Button logo={<Add />} isLoading={isSubmitting} isDisable={!isValid} />
       </form>
 
       {todosSize === 0 && (

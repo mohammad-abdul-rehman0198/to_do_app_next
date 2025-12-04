@@ -1,4 +1,6 @@
 export interface ButtonProps {
-  isValid: boolean;
-  isSubmitting: boolean;
+  buttonText?: string;
+  logo?: React.ReactNode;
+  isLoading?: boolean;
+  isDisable?: boolean;
 }

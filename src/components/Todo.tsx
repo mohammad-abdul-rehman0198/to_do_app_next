@@ -1,17 +1,16 @@
 "use client";
 
-import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useEffect, useState, useRef, useContext } from "react";
 
-import editIcon from "@/assets/icons/edit.svg";
-import deleteIcon from "@/assets/icons/delete.svg";
-import circleIcon from "@/assets/icons/circle.svg";
+import Edit from "@/components/icons/Edit";
+import Circle from "@/components/icons/Circle";
+import Delete from "@/components/icons/Delete";
 import type { Todo } from "@/utils/interfaces/Todo";
 import { TodoContext } from "@/context/TodoContext";
+import FilledCircle from "@/components/icons/FilledCircle";
 import type { FormData } from "@/utils/interfaces/FormData";
-import filledCircleIcon from "@/assets/icons/filledCircle.svg";
 import { FormSchema } from "@/utils/validationSchemas/FormSchema";
 import { getTodos,markTodoAsCompleted,deleteTodo,updateTodo } from "@/utils/actions/Database";
 
@@ -21,9 +20,9 @@ const Todos = () => {
 
   const editRef = useRef<HTMLInputElement>(null);
 
-  const [editTodo, setEditTodo] = useState<Todo | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
-
+  const [editTodo, setEditTodo] = useState<Todo | null>(null);
+  
   const { register, handleSubmit, setValue } = useForm<FormData>({
     resolver: yupResolver(FormSchema),
     mode: "onChange",
@@ -113,17 +112,13 @@ const Todos = () => {
             <>
               <div className="flex items-center gap-2">
                 {todo.isCompleted ? (
-                  <Image
+                  <FilledCircle
                     onClick={() => handleCompleteTodo(todo.id)}
-                    src={filledCircleIcon}
-                    alt="filledCircle"
                     className="cursor-pointer"
                   />
                 ) : (
-                  <Image
+                  <Circle
                     onClick={() => handleCompleteTodo(todo.id)}
-                    src={circleIcon}
-                    alt="circle"
                     className="cursor-pointer"
                   />
                 )}
@@ -136,17 +131,13 @@ const Todos = () => {
 
               <div className="flex items-center gap-1">
                 <button>
-                  <Image
-                    src={editIcon}
-                    alt="edit"
+                  <Edit
                     onClick={() => handleEditTodo(todo)}
                     className="cursor-pointer"
                   />
                 </button>
                 <button>
-                  <Image
-                    src={deleteIcon}
-                    alt="delete"
+                  <Delete
                     onClick={() => handleDeleteTodo(todo.id)}
                     className="cursor-pointer"
                   />
