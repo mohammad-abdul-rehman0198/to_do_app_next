@@ -1,8 +1,9 @@
 import type { Todo } from "@/utils/interfaces/Todo";
+import { getFromLocalStorage, setToLocalStorage } from "@/utils/actions/LocalStorage";
 
 const getTodos = () => {
   try {
-    const stored = localStorage.getItem("todos") || "[]";
+    const stored = getFromLocalStorage("todos") || "[]";
     const parsedTodos: Todo[] = JSON.parse(stored);
     return parsedTodos;
   } catch (error) {
@@ -10,16 +11,17 @@ const getTodos = () => {
   }
 };
 
-const addTodo = (taskName: string) => {
+const addTodo = (taskName: string, description?: string) => {
   try {
     const newTodo: Todo = {
       id: crypto.randomUUID(),
       taskName: taskName,
+      description: description || "",
       isCompleted: false,
     };
     const oldTodos = getTodos();
     const updatedTodos = [...(oldTodos || []), newTodo];
-    localStorage.setItem("todos", JSON.stringify(updatedTodos));
+    setToLocalStorage("todos", updatedTodos);
   } catch (error) {
     console.error(error);
   }
@@ -40,7 +42,7 @@ const markTodoAsCompleted = (id: string) => {
       return todo;
     });
 
-    localStorage.setItem("todos", JSON.stringify(updatedTodos));
+    setToLocalStorage("todos", updatedTodos);
   } catch (error) {
     console.error(error);
   }
@@ -50,24 +52,24 @@ const deleteTodo = (id: string) => {
   try {
     const todos = getTodos() || [];
     const updatedTodos = todos.filter((todo: Todo) => todo.id !== id);
-    localStorage.setItem("todos", JSON.stringify(updatedTodos));
+    setToLocalStorage("todos", updatedTodos);
   } catch (error) {
     console.error(error);
   }
 };
 
-const updateTodo = (id: string, taskName: string) => {
+const updateTodo = (id: string, taskName: string, description?:string) => {
   try {
     const todos = getTodos() || [];
 
     const updatedTodos = todos.map((todo: Todo) => {
       if (todo.id === id) {
-        return { ...todo, taskName };
+        return { ...todo, taskName, description: description || "" };
       }
       return todo;
     });
 
-    localStorage.setItem("todos", JSON.stringify(updatedTodos));
+    setToLocalStorage("todos", updatedTodos);
   } catch (error) {
     console.error(error);
   }

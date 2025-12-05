@@ -3,8 +3,10 @@ import { useEffect, useState, useContext } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 
 import Add from "@/components/icons/Add";
+import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { TodoContext } from "@/context/TodoContext";
+import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import type { FormData } from "@/utils/interfaces/FormData";
 import { getTodos, addTodo } from "@/utils/actions/Database";
 import { DEFAULT_VALUES } from "@/utils/constants/DefaultValues";
@@ -60,14 +62,18 @@ const Form = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="w-[70%] max-[510px]:w-[90%] flex items-center gap-3 border-none mt-[38px] mb-5 rounded-[11px] max-w-[455px]"
       >
-        <input
+        <Input
           type="text"
           placeholder="Write your next task"
-          {...register("taskName")}
-          className="w-full bg-[#1f2937] text-white p-3 rounded-[11px] outline-none border-none placeholder:text-sm"
+          {...register("taskName", { required: "Task name is required" })}
         />
 
-        <Button logo={<Add />} isLoading={isSubmitting} isDisable={!isValid} />
+        <Button
+          variant={ButtonVariant.PRIMARY}
+          logo={<Add />}
+          isLoading={isSubmitting}
+          isDisable={!isValid}
+        />
       </form>
 
       {todosSize === 0 && (

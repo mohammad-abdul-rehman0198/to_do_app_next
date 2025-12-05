@@ -1,28 +1,72 @@
 "use client";
 
-import Loader from "@/components/Loader";
-import type { ButtonProps } from "@/utils/interfaces/ButtonProps";
+import clsx from "clsx";
 
-const Button = ({ buttonText, logo, isLoading, isDisable }: ButtonProps) => {
+import Loader from "@/components/ui/Loader";
+import { ButtonType } from "@/utils/enum/ButtonType";
+import { ButtonVariant } from "@/utils/enum/ButtonVariant";
+interface ButtonProps {
+  buttonText?: string;
+  logo?: React.ReactNode;
+  isLoading?: boolean;
+  isDisable?: boolean;
+  onClick?: () => void;
+  variant?: ButtonVariant;
+  bgColor?: string;
+  type?: ButtonType;
+}
+
+const Button = ({
+  buttonText,
+  logo,
+  isLoading,
+  isDisable,
+  onClick,
+  variant = ButtonVariant.PRIMARY,
+  bgColor,
+  type = ButtonType.SUBMIT,
+}: ButtonProps) => {
+  const variantClasses = clsx({
+    "bg-[#88ab33] text-white": variant === ButtonVariant.PRIMARY,
+    "bg-gray-700 text-white": variant === ButtonVariant.SECONDARY,
+    "border border-gray-500 text-gray-700 bg-transparent":
+      variant === ButtonVariant.OUTLINE,
+    "bg-transparent": variant === ButtonVariant.ICON,
+  });
+
+  const customBG = bgColor ? `${bgColor} text-white` : "";
+  const paddingClasses = variant === ButtonVariant.ICON ? "p-0" : "py-3 px-3";
+
+  const handleClick = () => {
+    if (onClick) onClick();
+  };
+
   return (
     <button
-      type="submit"
+      type={type === ButtonType.SUBMIT ? "submit" : "button"}
+      onClick={handleClick}
       disabled={isDisable || isLoading}
-      className="bg-[#88ab33] border-none cursor-pointer rounded-[11px] py-3 px-2 flex items-center justify-center"
+      className={clsx(
+        "rounded-[11px] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
+        paddingClasses,
+        variantClasses,
+        customBG
+      )}
     >
       {isLoading ? (
         <Loader />
       ) : (
         <>
-
-          {logo && (
-            <span className="w-full h-full flex items-center justify-center">
-              {logo}
-            </span>
+          {variant === ButtonVariant.ICON && logo && (
+            <span className="flex items-center justify-center">{logo}</span>
           )}
 
-          {buttonText && (
-            <span className="text-white text-[1rem]">{buttonText}</span>
+          {variant !== ButtonVariant.ICON && logo && (
+            <span className="flex items-center justify-center">{logo}</span>
+          )}
+
+          {buttonText && variant !== ButtonVariant.ICON && (
+            <span className="text-[1rem]">{buttonText}</span>
           )}
         </>
       )}
