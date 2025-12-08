@@ -12,8 +12,8 @@ import { API_METHODS } from "@/utils/enum/ApiMethods";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import type { FormData } from "@/utils/interfaces/FormData";
 import { DEFAULT_VALUES } from "@/utils/constants/DefaultValues";
-import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { FormSchema } from "@/utils/validationSchemas/FormSchema";
+import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
 
 const Form = () => {
