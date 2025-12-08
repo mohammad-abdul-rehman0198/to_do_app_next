@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useEffect, useState, useContext } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
@@ -5,16 +6,19 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import Add from "@/components/icons/Add";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import { Todo } from "@/utils/interfaces/Todo";
 import { TodoContext } from "@/context/TodoContext";
+import { API_METHODS } from "@/utils/enum/ApiMethods";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import type { FormData } from "@/utils/interfaces/FormData";
-import { getTodos, addTodo } from "@/utils/actions/Database";
 import { DEFAULT_VALUES } from "@/utils/constants/DefaultValues";
+import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { FormSchema } from "@/utils/validationSchemas/FormSchema";
+import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
 
 const Form = () => {
   const context = useContext(TodoContext);
-  const { todos, setTodos } = context || { todos: [], setTodos: () => {} };
+  const { todos } = context || { todos: [], setTodos: () => {} };
 
   const [todosSize, setTodosSize] = useState<number>(0);
 
@@ -32,25 +36,61 @@ const Form = () => {
   });
 
   useEffect(() => {
-    const fetchTodosSize = () => {
+    const fetchTodosSize = async () => {
       try {
-        const todos = getTodos();
-        setTodosSize(todos?.length || 0);
-      } catch (error) {
-        console.error(error);
+        const response = await fetch(
+          process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS_COUNT,
+          {
+            method: API_METHODS.GET,
+            headers: HEADERS,
+          }
+        );
+
+        if (!response.ok) {
+          toast.error(NOTIFY_MESSAGES.TODO_COUNT_FAILED);
+        }
+
+        const responseData = await response.json();
+        if (responseData.success) {
+          setTodosSize(responseData.todoCount || 0);
+        } else {
+          toast.error(responseData.message);
+        }
+      } catch {
+        toast.error(NOTIFY_MESSAGES.TODO_COUNT_FAILED);
       }
     };
 
     fetchTodosSize();
   }, [todos]);
 
-  const onSubmit: SubmitHandler<FormData> = (data) => {
+  const onSubmit: SubmitHandler<FormData> = async (data) => {
     try {
-      addTodo(data.taskName);
-      const todos = getTodos() || [];
-      setTodos(todos);
-    } catch (error) {
-      console.error(error);
+      const newTodo: Todo = {
+        id: crypto.randomUUID(),
+        taskName: data.taskName,
+        description: data.description || "",
+        isCompleted: false,
+      };
+
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS, {
+        method: API_METHODS.POST,
+        headers: HEADERS,
+        body: JSON.stringify(newTodo),
+      });
+
+      if (!response.ok) {
+        toast.error(NOTIFY_MESSAGES.TODO_ADD_FAILED);
+      }
+
+      const responseData = await response.json();
+      if (responseData.success) {
+        toast.success(responseData.message);
+      } else {
+        toast.error(responseData.message);
+      }
+    } catch {
+      toast.error(NOTIFY_MESSAGES.TODO_ADD_FAILED);
     } finally {
       reset();
     }

@@ -20,6 +20,7 @@ interface DialogProps {
   description?: string;
   taskName?: string;
   taskDescription?: string;
+  isLoading?: boolean;
 }
 
 const Dialog = ({
@@ -31,6 +32,7 @@ const Dialog = ({
   description,
   taskName = "",
   taskDescription = "",
+  isLoading = false,
 }: DialogProps) => {
   const {
     register,
@@ -107,8 +109,9 @@ const Dialog = ({
             <div>
               <Input
                 type="text"
-                placeholder="Task name"
-                {...register("taskName", { required: "Task name is required" })}
+                placeholder="Task name*"
+                {...register("taskName", { required: "Task name is required." })}
+                className="border-[#c2b39a] border"
               />
               {errors.taskName && (
                 <p className="text-red-400 text-sm mt-1">
@@ -118,14 +121,15 @@ const Dialog = ({
             </div>
 
             <div>
-                <Input
-                    type="text"
-                    {...register("description")}
-                    placeholder="Description"
-                />
-                {errors.description && (
-                    <p className="text-red-400 text-sm mt-1">
-                    {errors.description.message}
+              <Input
+                type="text"
+                {...register("description")}
+                placeholder="Description"
+                className="border-[#c2b39a] border"
+              />
+              {errors.description && (
+                <p className="text-red-400 text-sm mt-1">
+                  {errors.description.message}
                 </p>
               )}
             </div>
@@ -137,12 +141,13 @@ const Dialog = ({
                 buttonText="Cancel"
                 isDisable={isSubmitting}
               />
+
               <Button
                 type={ButtonType.SUBMIT}
                 variant={ButtonVariant.PRIMARY}
                 buttonText={BUTTON_MESSAGES[variant]}
                 isDisable={!isValid}
-                isLoading={isSubmitting}
+                isLoading={isLoading || isSubmitting}
               />
             </div>
           </form>
@@ -150,12 +155,17 @@ const Dialog = ({
 
         {variant !== DialogVariant.UPDATE && (
           <div className="flex justify-end gap-3">
-            <Button variant={ButtonVariant.SECONDARY} onClick={onClose} buttonText="Cancel" />
+            <Button
+              variant={ButtonVariant.SECONDARY}
+              onClick={onClose}
+              buttonText="Cancel"
+            />
 
             <Button
               variant={ButtonVariant.PRIMARY}
               onClick={handleNormalConfirm}
               buttonText={BUTTON_MESSAGES[variant]}
+              isLoading={isLoading}
             />
           </div>
         )}

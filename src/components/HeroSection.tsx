@@ -12,16 +12,10 @@ const HeroSection = () => {
 
   useEffect(() => {
     const fetchTodosSize = () => {
-      try {
-        const completed = todos.filter(
-          (todo: Todo) => todo.isCompleted === true
-        );
+      const completed = todos.filter((todo: Todo) => todo.isCompleted === true);
 
-        setTodosSize(todos.length);
-        setCompletedSize(completed.length);
-      } catch (error) {
-        console.error(error);
-      }
+      setTodosSize(todos.length);
+      setCompletedSize(completed.length);
     };
 
     fetchTodosSize();

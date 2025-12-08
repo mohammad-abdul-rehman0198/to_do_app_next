@@ -53,22 +53,17 @@ const Button = ({
         customBG
       )}
     >
-      {isLoading ? (
-        <Loader />
-      ) : (
-        <>
-          {variant === ButtonVariant.ICON && logo && (
-            <span className="flex items-center justify-center">{logo}</span>
-          )}
+    
+      {logo && <span className="flex items-center justify-center">{logo}</span>}
 
-          {variant !== ButtonVariant.ICON && logo && (
-            <span className="flex items-center justify-center">{logo}</span>
-          )}
+      {buttonText && variant !== ButtonVariant.ICON && (
+        <span className="text-[1rem]">{buttonText}</span>
+      )}
 
-          {buttonText && variant !== ButtonVariant.ICON && (
-            <span className="text-[1rem]">{buttonText}</span>
-          )}
-        </>
+      {isLoading && (
+        <span className="ml-2 flex items-center">
+          <Loader />
+        </span>
       )}
     </button>
   );
