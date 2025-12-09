@@ -8,6 +8,20 @@
       "when": 1765184110717,
       "tag": "0000_romantic_firebird",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765264539979,
+      "tag": "0001_mature_prodigy",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765269722877,
+      "tag": "0002_solid_christian_walker",
+      "breakpoints": true
     }
   ]
 }

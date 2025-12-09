@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { db } from "@/db";
@@ -6,11 +6,22 @@ import { todos } from "@/db/schemas/todo";
 import { Todo } from "@/utils/interfaces/Todo";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 
-const getTodos = async () => {
+const getTodos = async (request: Request) => {
   try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "User ID is required" },
+        { status: 400 }
+      );
+    }
+
     const todoList: Todo[] = await db
       .select()
       .from(todos)
+      .where(eq(todos.userId, userId))
       .then((res) =>
         res.map((todo) => ({
           id: todo.id,
@@ -38,11 +49,18 @@ const getTodos = async () => {
 
 const addTodo = async (request: Request) => {
   try {
-    const { id, taskName, description, isCompleted } = await request.json();
+    const { userId, id, taskName, description, isCompleted } = await request.json();
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "User ID is required" },
+        { status: 400 }
+      );
+    }
 
     const newTodo = await db
       .insert(todos)
-      .values({ id, taskName, description, isCompleted })
+      .values({ userId, id, taskName, description, isCompleted })
       .returning();
 
     return NextResponse.json(
@@ -51,7 +69,11 @@ const addTodo = async (request: Request) => {
     );
   } catch (error) {
     return NextResponse.json(
-      { success: false, message: NOTIFY_MESSAGES.TODO_ADD_FAILED, error: error },
+      {
+        success: false,
+        message: NOTIFY_MESSAGES.TODO_ADD_FAILED,
+        error: error,
+      },
       { status: 500 }
     );
   }
@@ -59,12 +81,19 @@ const addTodo = async (request: Request) => {
 
 const updateTodo = async (request: Request) => {
   try {
-    const { id, taskName, description } = await request.json();
+    const { userId, id, taskName, description } = await request.json();
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "User ID is required" },
+        { status: 400 }
+      );
+    }
 
     const [existingTodo] = await db
       .select()
       .from(todos)
-      .where(eq(todos.id, id));
+      .where(and(eq(todos.id, id), eq(todos.userId, userId)));
 
     if (!existingTodo) {
       return NextResponse.json(
@@ -96,12 +125,26 @@ const updateTodo = async (request: Request) => {
 
 const deleteTodo = async (request: Request) => {
   try {
-    const { id } = await request.json();
+    const { userId, id } = await request.json();
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "User ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "Todo ID is required" },
+        { status: 400 }
+      );
+    }
 
     const [existingTodo] = await db
       .select()
       .from(todos)
-      .where(eq(todos.id, id));
+      .where(and(eq(todos.id, id), eq(todos.userId, userId)));
 
     if (!existingTodo) {
       return NextResponse.json(
@@ -110,7 +153,7 @@ const deleteTodo = async (request: Request) => {
       );
     }
 
-    await db.delete(todos).where(eq(todos.id, id));
+    await db.delete(todos).where(and(eq(todos.id, id), eq(todos.userId, userId)));
 
     return NextResponse.json(
       { success: true, message: "Todo deleted successfully" },
@@ -130,12 +173,26 @@ const deleteTodo = async (request: Request) => {
 
 const markTodoAsCompleted = async (request: Request) => {
   try {
-    const { id } = await request.json();
+    const { userId, id } = await request.json();
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "User ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "Todo ID is required" },
+        { status: 400 }
+      );
+    }
 
     const [existingTodo] = await db
       .select()
       .from(todos)
-      .where(eq(todos.id, id));
+      .where(and(eq(todos.id, id), eq(todos.userId, userId)));
 
     if (!existingTodo) {
       return NextResponse.json(
@@ -149,7 +206,7 @@ const markTodoAsCompleted = async (request: Request) => {
     const updatedTodo = await db
       .update(todos)
       .set({ isCompleted: newStatus })
-      .where(eq(todos.id, id))
+      .where(and(eq(todos.id, id), eq(todos.userId, userId)))
       .returning();
 
     return NextResponse.json(

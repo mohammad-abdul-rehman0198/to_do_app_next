@@ -1,15 +1,17 @@
 "use client";
 
 import { toast } from "react-toastify";
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useRef } from "react";
 
 import Edit from "@/components/icons/Edit";
 import Dialog from "@/components/ui/Dialog";
 import Loader from "@/components/ui/Loader";
 import Button from "@/components/ui/Button";
+import { User } from "@/utils/interfaces/User";
 import Circle from "@/components/icons/Circle";
 import Delete from "@/components/icons/Delete";
-import { supabase } from "@/utils/supabase/client";
+import { supabase } from "@/db/supabase/client";
+import { getUser } from "@/utils/actions/GetUser";
 import type { Todo } from "@/utils/interfaces/Todo";
 import { TodoContext } from "@/context/TodoContext";
 import { API_METHODS } from "@/utils/enum/ApiMethods";
@@ -28,18 +30,39 @@ const Todos = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedId, setSelectedId] = useState<string>("");
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [userData, setUserData] = useState<User | null>(null);
   const [editTodo, setEditTodo] = useState<Todo | null>(null);
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [dialogVariant, setDialogVariant] = useState<DialogVariant | null>(
     null
   );
 
+  const hasFetched = useRef(false);
+
   useEffect(() => {
     const fetchTodos = async () => {
+      if (hasFetched.current) return;
+      hasFetched.current = true;
+      
       try {
+        const user = await getUser();
+
+        if (!user) {
+          toast.error(user);
+          return;
+        }
+
+        setUserData({
+          id: user?.id,
+          name: user?.user_metadata?.name,
+          email: user?.email,
+        });
+
         setInitialLoading(true);
         const response = await fetch(
-          process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS,
+          `${process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS}?userId=${
+            user?.id
+          }`,
           {
             method: API_METHODS.GET,
             headers: HEADERS,
@@ -164,7 +187,7 @@ const Todos = () => {
         {
           method: API_METHODS.PATCH,
           headers: HEADERS,
-          body: JSON.stringify({ id }),
+          body: JSON.stringify({ id, userId: userData?.id }),
         }
       );
 
@@ -192,7 +215,7 @@ const Todos = () => {
         {
           method: API_METHODS.DELETE,
           headers: HEADERS,
-          body: JSON.stringify({ id }),
+          body: JSON.stringify({ id, userId: userData?.id }),
         }
       );
 
@@ -215,9 +238,9 @@ const Todos = () => {
 
   const handleSaveEditTodo = async (data: FormData) => {
     if (!isEditing) return;
+
     try {
       setLoading(true);
-
       const response = await fetch(
         process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS,
         {
@@ -225,6 +248,7 @@ const Todos = () => {
           headers: HEADERS,
           body: JSON.stringify({
             id: editTodo?.id,
+            userId: userData?.id,
             taskName: data.taskName,
             description: data.description || "",
           }),

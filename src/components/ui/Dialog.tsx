@@ -9,7 +9,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { DialogVariant } from "@/utils/enum/DialogVariant";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import type { FormData } from "@/utils/interfaces/FormData";
-import { FormSchema } from "@/utils/validationSchemas/FormSchema";
+import { FormSchema } from "@/utils/validationSchemas/TodoFormSchema";
 
 interface DialogProps {
   isOpen: boolean;

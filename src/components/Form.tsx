@@ -7,21 +7,25 @@ import Add from "@/components/icons/Add";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { Todo } from "@/utils/interfaces/Todo";
+import { User } from "@/utils/interfaces/User";
+import { getUser } from "@/utils/actions/GetUser";
 import { TodoContext } from "@/context/TodoContext";
 import { API_METHODS } from "@/utils/enum/ApiMethods";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import type { FormData } from "@/utils/interfaces/FormData";
 import { DEFAULT_VALUES } from "@/utils/constants/DefaultValues";
-import { FormSchema } from "@/utils/validationSchemas/FormSchema";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
+import { FormSchema } from "@/utils/validationSchemas/TodoFormSchema";
 import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
+
 
 const Form = () => {
   const context = useContext(TodoContext);
   const { todos } = context || { todos: [], setTodos: () => {} };
 
   const [todosSize, setTodosSize] = useState<number>(0);
-
+  const [userData, setUserData] = useState<User | null>(null);
+  
   const {
     register,
     handleSubmit,
@@ -38,8 +42,23 @@ const Form = () => {
   useEffect(() => {
     const fetchTodosSize = async () => {
       try {
+        const user = await getUser();
+
+        if (!user) {
+          toast.error(user);
+          return;
+        }
+
+        setUserData({
+          id: user?.id,
+          name: user?.user_metadata?.name,
+          email: user?.email,
+        });
+
         const response = await fetch(
-          process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS_COUNT,
+          `${
+            process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS_COUNT
+          }?userId=${user?.id}`,
           {
             method: API_METHODS.GET,
             headers: HEADERS,
@@ -73,11 +92,14 @@ const Form = () => {
         isCompleted: false,
       };
 
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS, {
-        method: API_METHODS.POST,
-        headers: HEADERS,
-        body: JSON.stringify(newTodo),
-      });
+      const response = await fetch(
+        process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS,
+        {
+          method: API_METHODS.POST,
+          headers: HEADERS,
+          body: JSON.stringify({ ...newTodo, userId: userData?.id }),
+        }
+      );
 
       if (!response.ok) {
         toast.error(NOTIFY_MESSAGES.TODO_ADD_FAILED);
