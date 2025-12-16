@@ -12,7 +12,7 @@ export const useAddTodo = () => {
   const userData = useAtomValue(userAtom);
 
   const { mutate, isPending, isError, isSuccess } = useMutation({
-    mutationFn: async (newTodo: Todo) => {
+    mutationFn: async (newTodo: Partial<Todo>) => {
       if (!userData) return;
       if (!newTodo) return;
 

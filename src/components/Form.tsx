@@ -35,15 +35,15 @@ const Form = () => {
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     try {
-      const newTodo: Todo = {
-        id: crypto.randomUUID(),
+      const newTodo: Partial<Todo> = {
         taskName: data.taskName,
         description: data.description || "",
         status: false,
       };
 
       addTodo(newTodo, {
-        onSuccess: () => {
+        onSuccess: (data) => {
+          console.log({data});
           toast.success(NOTIFY_MESSAGES.TODO_ADD_SUCCESS);
         },
         onError: () => {
