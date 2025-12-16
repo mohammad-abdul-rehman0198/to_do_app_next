@@ -13,14 +13,14 @@ import { FormSchema } from "@/utils/validationSchemas/TodoFormSchema";
 
 interface DialogProps {
   isOpen: boolean;
-  onClose: () => void;
-  onConfirm: (data?: FormData | undefined) => void;
   variant?: DialogVariant;
   title?: string;
   description?: string;
   taskName?: string;
   taskDescription?: string;
   isLoading?: boolean;
+  onClose: () => void;
+  onConfirm: (data?: FormData | undefined) => void;
 }
 
 const Dialog = ({
@@ -108,9 +108,12 @@ const Dialog = ({
           >
             <div>
               <Input
+                label="Task*"
                 type="text"
-                placeholder="Task name*"
-                {...register("taskName", { required: "Task name is required." })}
+                placeholder="Write your task"
+                {...register("taskName", {
+                  required: "Task name is required.",
+                })}
                 className="border-[#c2b39a] border"
               />
               {errors.taskName && (
@@ -122,9 +125,10 @@ const Dialog = ({
 
             <div>
               <Input
+                label="Description"
                 type="text"
                 {...register("description")}
-                placeholder="Description"
+                placeholder="Write your description"
                 className="border-[#c2b39a] border"
               />
               {errors.description && (
@@ -140,6 +144,7 @@ const Dialog = ({
                 onClick={onClose}
                 buttonText="Cancel"
                 isDisable={isSubmitting}
+                type={ButtonType.BUTTON}
               />
 
               <Button

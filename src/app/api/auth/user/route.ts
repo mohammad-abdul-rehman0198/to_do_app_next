@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServer } from "@/db/supabase/server";
+
+import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
+import { getServerSession } from "@/utils/actions/GetServerSession";
+
 
 export const GET = async () => {
   try {
-    const supabase = await createSupabaseServer();
+    const { supabase } = await getServerSession();
 
     const {
       data: { user: userData },
@@ -19,7 +22,7 @@ export const GET = async () => {
 
     if (!userData) {
       return NextResponse.json(
-        { success: false, message: "No active session" },
+        { success: false, message: NOTIFY_MESSAGES.NO_ACTIVE_SESSION },
         { status: 401 }
       );
     }
@@ -27,7 +30,7 @@ export const GET = async () => {
     return NextResponse.json({ success: true, userData });
   } catch {
     return NextResponse.json(
-      { success: false, message: "Failed to get session" },
+      { success: false, message: NOTIFY_MESSAGES.SERVER_ERROR },
       { status: 500 }
     );
   }

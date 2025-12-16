@@ -1,45 +1,75 @@
+import { eq } from "drizzle-orm";
+import validator from "validator";
 import { NextResponse } from "next/server";
 
-import { createSupabaseServer } from "@/db/supabase/server";
+import { db } from "@/db";
+import { users } from "@/db/schemas/user";
+import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
+import { getServerSession } from "@/utils/actions/GetServerSession";
 
-const signupUser = async (req: Request) => {
+
+export const POST = async (req: Request) => {
   try {
     const { email, password, name, confirmPassword } = await req.json();
 
-    if (!email || !password || !name) {
+    const { supabase } = await getServerSession();
+
+    if (!email || !password || !name || !validator.isEmail(email) || password.length < 6 || password !== confirmPassword) {
       return NextResponse.json({
         success: false,
-        message: "All fields are required.",
+        message: NOTIFY_MESSAGES.ALL_FIELDS_REQUIRED,
       });
     }
 
-    if (password !== confirmPassword) {
+    const emailExists = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
+
+    if (emailExists.length > 0) {
       return NextResponse.json({
         success: false,
-        message: "Passwords do not match.",
+        message: NOTIFY_MESSAGES.EMAIL_ALREADY_EXISTS,
       });
     }
 
-    const supabase = await createSupabaseServer();
-    const { data, error } = await supabase.auth.admin.createUser({
-      id: crypto.randomUUID(),
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      email_confirm: true,
-      user_metadata: { name },
+      options: {
+        data: {
+          name,
+          imageUrl: "",
+        },
+      },
     });
 
-    if (error)
-      return NextResponse.json({ success: false, message: error.message });
+    if (error) {
+      return NextResponse.json({
+        success: false,
+        message: error?.message || NOTIFY_MESSAGES.SIGNUP_FAILED,
+      });
+    }
+
+    await db.insert(users).values({
+      id: data.user?.id,
+      name,
+      email,
+      imageUrl: "",
+      createdBy: data.user?.id,
+      createdAt: new Date(),
+      updatedBy: data.user?.id,
+      updatedAt: new Date(),
+      deletedBy: null,
+      deletedAt: null,
+    });
 
     return NextResponse.json({
       success: true,
       user: data,
-      message: "Signed up successfully",
+      message: NOTIFY_MESSAGES.SIGNUP_SUCCESS,
     });
-  } catch (error) {
-    return NextResponse.json({ success: false, message: error });
+  } catch  {
+    return NextResponse.json({ success: false, message: NOTIFY_MESSAGES.SERVER_ERROR });
   }
 };
-
-export const POST = signupUser;

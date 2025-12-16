@@ -1,74 +1,68 @@
-import { ChevronDown } from "lucide-react";
+import Image from "next/image";
+import { useSetAtom } from "jotai";
+import { User } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter, usePathname } from "next/navigation";
 
 import Logo from "@/components/icons/Logo";
-import Button from "@/components/ui/Button";
 import UserMenu from "@/components/UserMenu";
-import { User } from "@/utils/interfaces/User";
-import { getUser } from "@/utils/actions/GetUser";
-import { ButtonType } from "@/utils/enum/ButtonType";
-import { API_METHODS } from "@/utils/enum/ApiMethods";
-import { ButtonVariant } from "@/utils/enum/ButtonVariant";
-import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
-
+import { todoAtom } from "@/state/atoms/todo";
+import { userAtom } from "@/state/atoms/user";
+import { useUser } from "@/customHooks/useUser";
+import { useLogout } from "@/customHooks/useLogout";
+import { QUERY_KEYS } from "@/utils/constants/QueryKeys";
+import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 
 const Header = () => {
   const router = useRouter();
 
-  const [userData, setUserData] = useState<User>();
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  const pathname = usePathname();
+  const isAuthPage =
+    pathname === "/auth/login" ||
+    pathname === "/auth/signup" ||
+    pathname === "/auth/resetPassword/sentEmail" ||
+    pathname === "/auth/resetPassword";
+
+  const { data, error } = useUser();
+  const { mutate: logout, isPending } = useLogout();
+
+  const setTodos = useSetAtom(todoAtom);
+  const setUserData = useSetAtom(userAtom);
+
   const [openUserMenu, setOpenUserMenu] = useState(false);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const user = await getUser();
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
 
-      if (!user) {
-        toast.error(user);
-        return;
-      }
+    if (!data || isAuthPage) return;
 
-      setUserData({
-        id: user?.id,
-        name: user?.user_metadata?.name,
-        email: user?.email,
-      });
-    };
-    fetchUserData();
-  }, []);
+    setUserData(data);
+  }, [data, error, isAuthPage, setUserData]);
 
   const handleOpenUserMenu = () => {
     setOpenUserMenu(!openUserMenu);
   };
 
-  const handleLogout = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(
-        process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.USERS_LOGOUT,
-        {
-          method: API_METHODS.POST,
-          headers: HEADERS,
-        }
-      );
-      setIsLoading(false);
-      if (!response.ok) {
-        toast.error("Failed to logout");
-        return;
-      }
-
-      const responseData = await response.json();
-      if (responseData.success) {
-        toast.success(responseData.message);
+  const handleLogout = () => {
+    logout(undefined, {
+      onSuccess: () => {
+        setUserData(null);
+        setTodos([]);
+        queryClient.removeQueries({ queryKey: [QUERY_KEYS.TODOS, data?.id] });
+        queryClient.removeQueries({ queryKey: [QUERY_KEYS.USER] });
         router.push("/auth/login");
-      } else {
-        toast.error(responseData.message);
-      }
-    } catch {
-      toast.error("Failed to logout");
-    }
+      },
+      onError: () => {
+        toast.error(NOTIFY_MESSAGES.LOGOUT_FAILED);
+      },
+    });
   };
 
   return (
@@ -79,25 +73,30 @@ const Header = () => {
           <h1 className="text-[1.6rem] sm:text-[2rem] font-bold">TODO</h1>
         </div>
 
-        <div className="text-center sm:text-right flex items-center gap-2">
-          <h1 className="text-[1.1rem] sm:text-[1.5rem] font-bold">
-            Welcome, {userData?.name}
-          </h1>
+        {data && !isAuthPage && (
+          <div className="flex items-center justify-center gap-2 relative">
+            <div>{data?.user_metadata?.name}</div>
+            <div
+              onClick={handleOpenUserMenu}
+              className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden cursor-pointer"
+            >
+              {data?.user_metadata?.imageUrl ? (
+                <Image
+                  src={data?.user_metadata?.imageUrl}
+                  alt="Profile"
+                  width={40}
+                  height={40}
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                <User className="w-6 h-6 text-white" />
+              )}
+            </div>
+          </div>
+        )}
 
-          <Button
-            variant={ButtonVariant.ICON}
-            logo={<ChevronDown className="w-4 h-4" />}
-            onClick={handleOpenUserMenu}
-            type={ButtonType.BUTTON}
-          />
-        </div>
-
-        {openUserMenu && (
-          <UserMenu
-            email={userData?.email || ""}
-            onLogout={handleLogout}
-            isLoading={isLoading}
-          />
+        {openUserMenu && !isAuthPage && (
+          <UserMenu onLogout={handleLogout} isLoading={isPending} />
         )}
       </header>
 

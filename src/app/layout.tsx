@@ -4,6 +4,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import ReactQueryProvider from "@/utils/providers/ReactQueryProvider";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -27,9 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black`}
       >
-        {children}
+        <ReactQueryProvider>{children}</ReactQueryProvider>
         <ToastContainer autoClose={2000} />
       </body>
     </html>

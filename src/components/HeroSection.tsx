@@ -1,18 +1,18 @@
-import { useContext, useEffect, useState } from "react";
+import { useAtomValue } from "jotai";
+import { useEffect, useState } from "react";
 
-import { TodoContext } from "@/context/TodoContext";
+import { todoAtom } from "@/state/atoms/todo";
 import type { Todo } from "@/utils/interfaces/Todo";
 
 const HeroSection = () => {
-  const context = useContext(TodoContext);
-  const { todos } = context || { todos: [] };
+  const todos = useAtomValue(todoAtom);
 
   const [todosSize, setTodosSize] = useState<number>(0);
   const [completedSize, setCompletedSize] = useState<number>(0);
 
   useEffect(() => {
     const fetchTodosSize = () => {
-      const completed = todos.filter((todo: Todo) => todo.isCompleted === true);
+      const completed = todos.filter((todo: Todo) => todo.status === true);
 
       setTodosSize(todos.length);
       setCompletedSize(completed.length);

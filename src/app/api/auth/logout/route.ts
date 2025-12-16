@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { createSupabaseServer } from "@/db/supabase/server";
+import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
+import { getServerSession } from "@/utils/actions/GetServerSession";
 
-const logoutUser = async () => {
+export const POST = async () => {
   try {
-    const supabase = await createSupabaseServer();
+    const { supabase } = await getServerSession();
 
     const { error } = await supabase.auth.signOut();
 
@@ -17,14 +18,12 @@ const logoutUser = async () => {
 
     return NextResponse.json({
       success: true,
-      message: "Logged out successfully",
+      message: NOTIFY_MESSAGES.LOGOUT_SUCCESS,
     });
   } catch {
     return NextResponse.json({
       success: false,
-      message: "Failed to logout",
+      message: NOTIFY_MESSAGES.LOGOUT_FAILED,
     });
   }
-}
-
-export const POST = logoutUser;
+};

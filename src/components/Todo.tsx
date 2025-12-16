@@ -1,150 +1,120 @@
 "use client";
 
 import { toast } from "react-toastify";
-import { useEffect, useState, useContext, useRef } from "react";
+import { useEffect, useState } from "react";
+import { useAtom, useAtomValue } from "jotai";
+import { CheckCircle, Circle } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import Edit from "@/components/icons/Edit";
 import Dialog from "@/components/ui/Dialog";
 import Loader from "@/components/ui/Loader";
 import Button from "@/components/ui/Button";
-import { User } from "@/utils/interfaces/User";
-import Circle from "@/components/icons/Circle";
+import { userAtom } from "@/state/atoms/user";
+import { todoAtom } from "@/state/atoms/todo";
+import useTodos from "@/customHooks/useTodos";
 import Delete from "@/components/icons/Delete";
 import { supabase } from "@/db/supabase/client";
-import { getUser } from "@/utils/actions/GetUser";
 import type { Todo } from "@/utils/interfaces/Todo";
-import { TodoContext } from "@/context/TodoContext";
-import { API_METHODS } from "@/utils/enum/ApiMethods";
+import { useEditTodo } from "@/customHooks/useEditTodo";
+import { QUERY_KEYS } from "@/utils/constants/QueryKeys";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import { DialogVariant } from "@/utils/enum/DialogVariant";
-import FilledCircle from "@/components/icons/FilledCircle";
 import type { FormData } from "@/utils/interfaces/FormData";
+import { useDeleteTodo } from "@/customHooks/useDeleteTodo";
+import { useCompleteTodo } from "@/customHooks/useCompleteTodo";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
-import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
 
 const Todos = () => {
-  const context = useContext(TodoContext);
-  const { todos, setTodos } = context || { todos: [], setTodos: () => {} };
+  const queryClient = useQueryClient();
+
+  const userData = useAtomValue(userAtom);
+  const [todos, setTodos] = useAtom(todoAtom);
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [loading, setLoading] = useState<boolean>(false);
   const [selectedId, setSelectedId] = useState<string>("");
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [userData, setUserData] = useState<User | null>(null);
   const [editTodo, setEditTodo] = useState<Todo | null>(null);
-  const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [dialogVariant, setDialogVariant] = useState<DialogVariant | null>(
     null
   );
 
-  const hasFetched = useRef(false);
+  const { isLoading, data, error } = useTodos();
+  const { mutate: updateTodo, isPending: isEditing } = useEditTodo();
+  const { mutate: deleteTodo, isPending: isDeleting } = useDeleteTodo();
+  const { mutate: completeTodo, isPending: isCompleting } = useCompleteTodo();
 
   useEffect(() => {
-    const fetchTodos = async () => {
-      if (hasFetched.current) return;
-      hasFetched.current = true;
-      
-      try {
-        const user = await getUser();
+    if (data) {
+      setTodos(data.todoList || []);
+    } else if (error) {
+      toast.error(error.message);
+    }
+  }, [data, error, setTodos]);
 
-        if (!user) {
-          toast.error(user);
-          return;
-        }
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-        setUserData({
-          id: user?.id,
-          name: user?.user_metadata?.name,
-          email: user?.email,
-        });
+    const setupRealtime = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-        setInitialLoading(true);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS}?userId=${
-            user?.id
-          }`,
+      if (!session?.user) return;
+
+      channel = supabase
+        .channel(`todos-realtime-${session.user.id}`)
+        .on(
+          "postgres_changes",
           {
-            method: API_METHODS.GET,
-            headers: HEADERS,
+            event: "*",
+            schema: "public",
+            table: "todos",
+            filter: `user_id=eq.${session.user.id}`,
+          },
+          (payload) => {
+            setTodos((prev) => {
+              if (payload.eventType === "INSERT") {
+                return [
+                  ...prev,
+                  {
+                    id: payload.new.id,
+                    taskName: payload.new.task_name,
+                    description: payload.new.description ?? "",
+                    status: payload.new.status,
+                  },
+                ];
+              }
+
+              if (payload.eventType === "UPDATE") {
+                return prev.map((todo) =>
+                  todo.id === payload.new.id
+                    ? {
+                        id: payload.new.id,
+                        taskName: payload.new.task_name,
+                        description: payload.new.description ?? "",
+                        status: payload.new.status,
+                      }
+                    : todo
+                );
+              }
+
+              if (payload.eventType === "DELETE") {
+                return prev.filter((todo) => todo.id !== payload.old.id);
+              }
+
+              return prev;
+            });
           }
-        );
-
-        if (!response.ok) {
-          toast.error(NOTIFY_MESSAGES.TODO_FETCH_FAILED);
-        }
-
-        const data = await response.json();
-        if (data.success) {
-          setTodos(data.todoList || []);
-        } else {
-          toast.error(data.message);
-          setTodos(data.todoList || []);
-        }
-      } catch {
-        toast.error(NOTIFY_MESSAGES.TODO_FETCH_FAILED);
-      } finally {
-        setInitialLoading(false);
-      }
+        )
+        .subscribe();
     };
 
-    fetchTodos();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel("todos-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "todos",
-        },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            setTodos((prev) => [
-              ...prev,
-              {
-                id: payload.new.id,
-                taskName: payload.new.task_name,
-                description: payload.new.description ?? "",
-                isCompleted: payload.new.is_completed,
-              },
-            ]);
-          }
-
-          if (payload.eventType === "UPDATE") {
-            setTodos((prev) =>
-              prev.map((todo) =>
-                todo.id === payload.new.id
-                  ? {
-                      id: payload.new.id,
-                      taskName: payload.new.task_name,
-                      description: payload.new.description ?? "",
-                      isCompleted: payload.new.is_completed,
-                    }
-                  : todo
-              )
-            );
-          }
-
-          if (payload.eventType === "DELETE") {
-            setTodos((prev) =>
-              prev.filter((todo) => todo.id !== payload.old.id)
-            );
-          }
-        }
-      )
-      .subscribe();
+    setupRealtime();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
     };
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setTodos]);
 
   const openDeleteDialog = (id: string) => {
     setSelectedId(id);
@@ -154,7 +124,7 @@ const Todos = () => {
 
   const openCompleteDialog = (id: string) => {
     setSelectedId(id);
-    if (todos.find((todo: Todo) => todo.id === id)?.isCompleted) {
+    if (todos.find((todo: Todo) => todo.id === id)?.status) {
       setDialogVariant(DialogVariant.INCOMPLETE);
     } else {
       setDialogVariant(DialogVariant.COMPLETE);
@@ -164,118 +134,62 @@ const Todos = () => {
 
   const openUpdateDialog = (todo: Todo) => {
     setEditTodo(todo);
-    setIsEditing(true);
     setDialogVariant(DialogVariant.UPDATE);
     setDialogOpen(true);
   };
 
-  const handleDialogConfirm = async () => {
-    setLoading(true);
+  const handleDialogConfirm = () => {
     if (dialogVariant === DialogVariant.DELETE) {
-      await handleDeleteTodo(selectedId);
+      handleDeleteTodo(selectedId);
     } else {
-      await handleCompleteTodo(selectedId);
+      handleCompleteTodo(selectedId);
     }
-    setDialogOpen(false);
-    setLoading(false);
   };
 
-  const handleCompleteTodo = async (id: string) => {
-    try {
-      const response = await fetch(
-        process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS,
-        {
-          method: API_METHODS.PATCH,
-          headers: HEADERS,
-          body: JSON.stringify({ id, userId: userData?.id }),
-        }
-      );
-
-      if (!response.ok) {
+  const handleCompleteTodo = (id: string) => {
+    completeTodo(id, {
+      onSuccess: () => {
+        toast.success(NOTIFY_MESSAGES.TODO_COMPLETE_SUCCESS);
+        setDialogOpen(false);
+      },
+      onError: () => {
         toast.error(NOTIFY_MESSAGES.TODO_COMPLETE_FAILED);
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success(data.message);
-      } else {
-        toast.error(data.message);
-      }
-    } catch {
-      toast.error(NOTIFY_MESSAGES.TODO_COMPLETE_FAILED);
-    } finally {
-      setLoading(false);
-    }
+      },
+    });
   };
 
-  const handleDeleteTodo = async (id: string) => {
-    try {
-      const response = await fetch(
-        process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS,
-        {
-          method: API_METHODS.DELETE,
-          headers: HEADERS,
-          body: JSON.stringify({ id, userId: userData?.id }),
-        }
-      );
-
-      if (!response.ok) {
+  const handleDeleteTodo = (id: string) => {
+    deleteTodo(id, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: [QUERY_KEYS.TODOS, userData?.id],
+        });
+        toast.success(NOTIFY_MESSAGES.TODO_DELETE_SUCCESS);
+        setDialogOpen(false);
+      },
+      onError: () => {
         toast.error(NOTIFY_MESSAGES.TODO_DELETE_FAILED);
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success(data.message);
-      } else {
-        toast.error(data.message);
-      }
-    } catch {
-      toast.error(NOTIFY_MESSAGES.TODO_DELETE_FAILED);
-    } finally {
-      setLoading(false);
-    }
+      },
+    });
   };
 
-  const handleSaveEditTodo = async (data: FormData) => {
-    if (!isEditing) return;
-
-    try {
-      setLoading(true);
-      const response = await fetch(
-        process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS,
-        {
-          method: API_METHODS.PUT,
-          headers: HEADERS,
-          body: JSON.stringify({
-            id: editTodo?.id,
-            userId: userData?.id,
-            taskName: data.taskName,
-            description: data.description || "",
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        toast.error(NOTIFY_MESSAGES.TODO_UPDATE_FAILED);
+  const handleSaveEditTodo = (form: FormData) => {
+    updateTodo(
+      { data: form, editTodoId: editTodo?.id || "" },
+      {
+        onSuccess: () => {
+          toast.success(NOTIFY_MESSAGES.TODO_UPDATE_SUCCESS);
+          setDialogOpen(false);
+          setEditTodo(null);
+        },
+        onError: () => {
+          toast.error(NOTIFY_MESSAGES.TODO_UPDATE_FAILED);
+        },
       }
-
-      const responseData = await response.json();
-      if (responseData.success) {
-        toast.success(responseData.message);
-      } else {
-        toast.error(responseData.message);
-      }
-    } catch {
-      toast.error(NOTIFY_MESSAGES.TODO_UPDATE_FAILED);
-    } finally {
-      setLoading(false);
-      setEditTodo(null);
-      setIsEditing(false);
-      setDialogOpen(false);
-    }
+    );
   };
 
-  if (initialLoading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader />
@@ -296,18 +210,28 @@ const Todos = () => {
                 <Button
                   variant={ButtonVariant.ICON}
                   onClick={() => openCompleteDialog(todo.id)}
-                  logo={todo.isCompleted ? <FilledCircle /> : <Circle />}
+                  logo={
+                    todo.status ? (
+                      <CheckCircle color="#22C55E" />
+                    ) : (
+                      <Circle color="#22C55E" />
+                    )
+                  }
                 />
 
                 <div>
-                  <p className={`${todo.isCompleted ? "line-through" : ""}`}>
+                  <p className={`${todo.status ? "line-through" : ""}`}>
                     {todo.taskName.length > 35
                       ? todo.taskName.slice(0, 35) + "..."
                       : todo.taskName}
                   </p>
 
                   {todo.description && (
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p
+                      className={`${
+                        todo.status ? "line-through" : ""
+                      } text-xs text-gray-400 mt-1`}
+                    >
                       {todo.description}
                     </p>
                   )}
@@ -344,7 +268,7 @@ const Todos = () => {
         variant={dialogVariant as DialogVariant}
         taskName={editTodo?.taskName}
         taskDescription={editTodo?.description}
-        isLoading={loading}
+        isLoading={isCompleting || isDeleting || isEditing}
       />
     </>
   );

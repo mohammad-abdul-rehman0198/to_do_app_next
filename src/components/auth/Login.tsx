@@ -2,26 +2,25 @@
 
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
-import { toast, ToastContainer } from "react-toastify";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { toast, ToastContainer } from "react-toastify";
 
+import Header from "@/components/Header";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { User } from "@/utils/interfaces/User";
-import { ButtonType } from "@/utils/enum/ButtonType";
-import { API_METHODS } from "@/utils/enum/ApiMethods";
-import { LoginSchema } from "@/utils/validationSchemas/LoginSchema";
-import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
 
+import { useLogin } from "@/customHooks/useLogin";
+import { ButtonType } from "@/utils/enum/ButtonType";
+import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
+import { LoginSchema } from "@/utils/validationSchemas/LoginSchema";
 
 const Login = () => {
-  const router = useRouter();
+  const { mutate: login, isPending } = useLogin();
 
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors, isSubmitting, isValid },
   } = useForm({
     resolver: yupResolver(LoginSchema),
@@ -30,83 +29,85 @@ const Login = () => {
 
   const onSubmit = async (data: User) => {
     try {
-        const response = await fetch(
-          process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.USERS_LOGIN,
-          {
-            method: API_METHODS.POST,
-            headers: HEADERS,
-            body: JSON.stringify(data),
-          }
-        );
-  
-        if (!response.ok) {
-          toast.error("Failed to login");
-          return;
-        }
-  
-        const responseData = await response.json();
-        if (responseData.success) {
-          toast.success(responseData.message);
-          router.push("/");
-        } else {
-          toast.error(responseData.message);
-        }
-      } catch {
-        toast.error("Failed to login");
-      } finally {
-        reset();
-      }
+      login(data);
+    } catch {
+      toast.error(NOTIFY_MESSAGES.LOGIN_FAILED);
+    }
   };
 
   return (
-    <section className="min-h-screen flex items-center justify-center bg-black">
-      <div className="w-[90%] max-w-[420px] rounded-[11px] p-6 bg-[#111827]">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-          <h1 className="text-white text-2xl text-center">Login</h1>
+    <div className="min-h-screen flex flex-col">
+      <Header />
 
-          <div>
-            <Input
-              type="email"
-              placeholder="Email*"
-              {...register("email")}
-              className={errors.email ? "border border-red-500" : ""}
+      <section className="h-full grow flex items-start justify-center">
+        <div className="w-[90%] max-w-[420px] rounded-[11px] p-6  border border-[#c2b39a]">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-5"
+          >
+            <h1 className="text-white text-2xl text-center">Log In</h1>
+
+            <div>
+              <Input
+                label="Email*"
+                type="email"
+                placeholder="Enter your email"
+                {...register("email")}
+                className={errors.email ? "border border-red-500" : ""}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Input
+                label="Password*"
+                type="password"
+                placeholder="Enter your password"
+                {...register("password")}
+                className={errors.password ? "border border-red-500" : ""}
+              />
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <Link
+                href="/auth/resetPassword/sentEmail"
+                className="text-blue-500 text-sm text-center hover:underline"
+              >
+                Reset Password?
+              </Link>
+            </div>
+
+            <Button
+              buttonText={isSubmitting ? "Logging In..." : "Log In"}
+              type={ButtonType.SUBMIT}
+              isLoading={isSubmitting || isPending}
+              isDisable={!isValid || isSubmitting || isPending}
             />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
 
-          <div>
-            <Input
-              type="password"
-              placeholder="Password*"
-              {...register("password")}
-              className={errors.password ? "border border-red-500" : ""}
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
+            <p className="text-white text-sm text-center">
+              Don&apos;t have an account?{" "}
+              <Link
+                href="/auth/signup"
+                className="text-blue-500 hover:underline"
+              >
+                Sign Up
+              </Link>
+            </p>
+          </form>
+        </div>
 
-          <Button
-            buttonText={isSubmitting ? "Logging in..." : "Login"}
-            type={ButtonType.SUBMIT}
-            isLoading={isSubmitting}
-            isDisable={!isValid || isSubmitting}
-          />
-
-          <p className="text-white text-sm text-center">
-            Don&apos;t have an account? <Link href="/auth/signup" className="text-blue-500 hover:underline" >Sign up</Link>
-          </p>
-        </form>
-      </div>
-
-      <ToastContainer />
-    </section>
+        <ToastContainer />
+      </section>
+    </div>
   );
 };
 
