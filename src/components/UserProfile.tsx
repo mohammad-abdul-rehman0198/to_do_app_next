@@ -78,9 +78,7 @@ const UserProfile = () => {
         {
           onSuccess: (data) => {
             if (data.success) {
-              console.log("old",user);
               queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER] });
-              console.log("new",user);
               toast.success(data.message);
               setIsEditingName(false);
               setHasChanges(false);

@@ -1,4 +1,4 @@
-import { useAtomValue } from "jotai";
+import { useAtom } from "jotai";
 import { toast } from "react-toastify";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm, type SubmitHandler } from "react-hook-form";
@@ -16,7 +16,7 @@ import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { FormSchema } from "@/utils/validationSchemas/TodoFormSchema";
 
 const Form = () => {
-  const todos = useAtomValue(todoAtom);
+  const [todos, setTodos] = useAtom(todoAtom);
 
   const { mutate: addTodo, isPending: isAdding } = useAddTodo();
 
@@ -43,7 +43,7 @@ const Form = () => {
 
       addTodo(newTodo, {
         onSuccess: (data) => {
-          console.log({data});
+          setTodos([...todos, data.newTodo]);
           toast.success(NOTIFY_MESSAGES.TODO_ADD_SUCCESS);
         },
         onError: () => {

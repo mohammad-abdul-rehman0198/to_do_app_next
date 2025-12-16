@@ -14,7 +14,6 @@ import { userAtom } from "@/state/atoms/user";
 import { todoAtom } from "@/state/atoms/todo";
 import useTodos from "@/customHooks/useTodos";
 import Delete from "@/components/icons/Delete";
-import { supabase } from "@/db/supabase/client";
 import type { Todo } from "@/utils/interfaces/Todo";
 import { useEditTodo } from "@/customHooks/useEditTodo";
 import { QUERY_KEYS } from "@/utils/constants/QueryKeys";
@@ -50,7 +49,6 @@ const Todos = () => {
       toast.error(error.message);
     }
   }, [data, error, setTodos]);
-
 
   const openDeleteDialog = (id: string) => {
     setSelectedId(id);
@@ -97,6 +95,7 @@ const Todos = () => {
   const handleDeleteTodo = (id: string) => {
     deleteTodo(id, {
       onSuccess: () => {
+        setTodos(todos.filter((todo: Todo) => todo.id !== id));
         queryClient.invalidateQueries({
           queryKey: [QUERY_KEYS.TODOS, userData?.id],
         });

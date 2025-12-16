@@ -48,6 +48,10 @@ export const PUT = async (req: Request) => {
 
     return NextResponse.json({
       success: true,
+      user: {
+        name,
+        imageUrl,
+      },
       message: NOTIFY_MESSAGES.PROFILE_UPDATED_SUCCESS,
     });
   } catch {

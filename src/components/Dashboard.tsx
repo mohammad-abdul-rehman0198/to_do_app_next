@@ -1,8 +1,8 @@
 "use client";
 
-import Form from "@/components/Form";
 import Todos from "@/components/Todo";
 import Header from "@/components/Header";
+import Form from "@/components/AddTodoForm";
 import HeroSection from "@/components/HeroSection";
 
 const Dashboard = () => {
