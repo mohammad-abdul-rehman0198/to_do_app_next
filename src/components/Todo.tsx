@@ -44,7 +44,6 @@ const Todos = () => {
 
   useEffect(() => {
     if (data) {
-      // setTodos(data.todoList || []);
       todoController.setTodos(data.todoList || []);
     } else if (error) {
       toast.error(error.message);
@@ -96,7 +95,6 @@ const Todos = () => {
   const handleDeleteTodo = (id: string) => {
     deleteTodo(id, {
       onSuccess: () => {
-        // setTodos(todos.filter((todo: Todo) => todo.id !== id));
         todoController.deleteTodo(id);
         queryClient.invalidateQueries({
           queryKey: [QUERY_KEYS.TODOS, userData?.id],

@@ -7,7 +7,7 @@ export const users = pgTable("users", {
   imageUrl: text("image_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   createdBy: uuid("created_by"),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
   updatedBy: uuid("updated_by"),
   deletedAt: timestamp("deleted_at"),
   deletedBy: uuid("deleted_by"),

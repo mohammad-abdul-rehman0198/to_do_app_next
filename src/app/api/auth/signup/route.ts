@@ -58,8 +58,8 @@ export const POST = async (req: Request) => {
       imageUrl: "",
       createdBy: data.user?.id,
       createdAt: new Date(),
-      updatedBy: data.user?.id,
-      updatedAt: new Date(),
+      updatedBy: null,
+      updatedAt: null,
       deletedBy: null,
       deletedAt: null,
     });
