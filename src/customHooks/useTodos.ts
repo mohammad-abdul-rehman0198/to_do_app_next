@@ -1,25 +1,24 @@
 "use client";
 
-import { useAtomValue } from "jotai";
 import { useQuery } from "@tanstack/react-query";
 
-import { userAtom } from "@/state/atoms/user";
-import { User } from "@/utils/interfaces/User";
 import { API_METHODS } from "@/utils/enum/ApiMethods";
+import { userController } from "@/state/controller/user";
 import { QUERY_KEYS } from "@/utils/constants/QueryKeys";
 import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
 
-const useTodos = () => {
-  const userData = useAtomValue<User | null>(userAtom);
 
+const useTodos = () => {
+  const { id: userId } = userController.useState(["id"]);
+  
   const { data, isLoading, error } = useQuery({
-    queryKey: [QUERY_KEYS.TODOS, userData?.id],
+    queryKey: [QUERY_KEYS.TODOS, userId],
     queryFn: async () => {
-      if (!userData) return [];
+      if (!userId) return [];
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS}?userId=${
-          userData.id
+          userId
         }`,
         {
           method: API_METHODS.GET,
@@ -30,7 +29,7 @@ const useTodos = () => {
       return await res.json();
     },
 
-    enabled: !!userData,
+    enabled: !! userId,
   });
 
   return { data, isLoading, error };

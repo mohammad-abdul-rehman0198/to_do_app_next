@@ -1,19 +1,18 @@
 "use client";
 
-import { useAtomValue } from "jotai";
 import { useMutation } from "@tanstack/react-query";
 
-import { userAtom } from "@/state/atoms/user";
 import type { Todo } from "@/utils/interfaces/Todo";
 import { API_METHODS } from "@/utils/enum/ApiMethods";
+import { userController } from "@/state/controller/user";
 import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
 
 export const useAddTodo = () => {
-  const userData = useAtomValue(userAtom);
+  const { id: userId } = userController.useState(['id']);
 
   const { mutate, isPending, isError, isSuccess } = useMutation({
     mutationFn: async (newTodo: Partial<Todo>) => {
-      if (!userData) return;
+      if (!userId) return;
       if (!newTodo) return;
 
       const res = await fetch(
@@ -21,7 +20,7 @@ export const useAddTodo = () => {
         {
           method: API_METHODS.POST,
           headers: HEADERS,
-          body: JSON.stringify({ ...newTodo, userId: userData.id }),
+          body: JSON.stringify({ ...newTodo, userId: userId }),
         }
       );
 

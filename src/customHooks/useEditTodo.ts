@@ -1,12 +1,10 @@
-import { useAtomValue } from "jotai";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { userAtom } from "@/state/atoms/user";
 import { API_METHODS } from "@/utils/enum/ApiMethods";
 import { QUERY_KEYS } from "@/utils/constants/QueryKeys";
+import { userController } from "@/state/controller/user";
 import type { FormData } from "@/utils/interfaces/FormData";
 import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
-
 interface EditTodo {
   data: FormData;
   editTodoId: string;
@@ -15,11 +13,11 @@ interface EditTodo {
 export const useEditTodo = () => {
   const queryClient = useQueryClient();
 
-  const userData = useAtomValue(userAtom);
+  const { id: userId } = userController.useState(["id"]);
 
   const { mutate, isPending, isError, isSuccess } = useMutation({
     mutationFn: async ({ data, editTodoId }: EditTodo) => {
-      if (!userData) return;
+      if (!userId) return;
       if (!editTodoId) return;
 
       const response = await fetch(
@@ -29,7 +27,7 @@ export const useEditTodo = () => {
           headers: HEADERS,
           body: JSON.stringify({
             id: editTodoId,
-            userId: userData.id,
+            userId: userId,
             taskName: data.taskName,
             description: data.description || "",
           }),
@@ -40,7 +38,7 @@ export const useEditTodo = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TODOS, userData?.id],
+        queryKey: [QUERY_KEYS.TODOS, userId],
       });
     },
   });

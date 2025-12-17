@@ -13,8 +13,6 @@ interface UpdateProfilePayload {
 }
 
 export const useUpdateProfile = () => {
-  
-
   const { mutate, isPending, isError, isSuccess } = useMutation({
     mutationFn: async ({ name, profileImage, imageUrl }: UpdateProfilePayload) => {
       if (profileImage) {

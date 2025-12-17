@@ -2,7 +2,6 @@
 
 import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
-import { useAtom, useAtomValue } from "jotai";
 import { CheckCircle, Circle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -10,13 +9,13 @@ import Edit from "@/components/icons/Edit";
 import Dialog from "@/components/ui/Dialog";
 import Loader from "@/components/ui/Loader";
 import Button from "@/components/ui/Button";
-import { userAtom } from "@/state/atoms/user";
-import { todoAtom } from "@/state/atoms/todo";
 import useTodos from "@/customHooks/useTodos";
 import Delete from "@/components/icons/Delete";
 import type { Todo } from "@/utils/interfaces/Todo";
 import { useEditTodo } from "@/customHooks/useEditTodo";
 import { QUERY_KEYS } from "@/utils/constants/QueryKeys";
+import { todoController } from "@/state/controller/todo";
+import { userController } from "@/state/controller/user";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import { DialogVariant } from "@/utils/enum/DialogVariant";
 import type { FormData } from "@/utils/interfaces/FormData";
@@ -24,11 +23,12 @@ import { useDeleteTodo } from "@/customHooks/useDeleteTodo";
 import { useCompleteTodo } from "@/customHooks/useCompleteTodo";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 
+
 const Todos = () => {
   const queryClient = useQueryClient();
 
-  const userData = useAtomValue(userAtom);
-  const [todos, setTodos] = useAtom(todoAtom);
+  const userData = userController.useState(["id", "name", "email", "imageUrl"]);
+  const { todos } = todoController.useState(["todos"]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -44,11 +44,12 @@ const Todos = () => {
 
   useEffect(() => {
     if (data) {
-      setTodos(data.todoList || []);
+      // setTodos(data.todoList || []);
+      todoController.setTodos(data.todoList || []);
     } else if (error) {
       toast.error(error.message);
     }
-  }, [data, error, setTodos]);
+  }, [data, error]);
 
   const openDeleteDialog = (id: string) => {
     setSelectedId(id);
@@ -58,7 +59,7 @@ const Todos = () => {
 
   const openCompleteDialog = (id: string) => {
     setSelectedId(id);
-    if (todos.find((todo: Todo) => todo.id === id)?.status) {
+    if (todos?.find((todo: Todo) => todo.id === id)?.status) {
       setDialogVariant(DialogVariant.INCOMPLETE);
     } else {
       setDialogVariant(DialogVariant.COMPLETE);
@@ -95,7 +96,8 @@ const Todos = () => {
   const handleDeleteTodo = (id: string) => {
     deleteTodo(id, {
       onSuccess: () => {
-        setTodos(todos.filter((todo: Todo) => todo.id !== id));
+        // setTodos(todos.filter((todo: Todo) => todo.id !== id));
+        todoController.deleteTodo(id);
         queryClient.invalidateQueries({
           queryKey: [QUERY_KEYS.TODOS, userData?.id],
         });
@@ -135,7 +137,7 @@ const Todos = () => {
   return (
     <>
       <ol className="w-[70%] max-[510px]:w-[90%] max-w-[455px] space-y-[27px]">
-        {todos.map((todo: Todo) => (
+        {todos?.map((todo: Todo) => (
           <li
             key={todo.id}
             className="w-full text-[1rem] text-white flex justify-between items-center border border-[#c2b39a] p-3"

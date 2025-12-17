@@ -1,24 +1,25 @@
-import { useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
 
-import { todoAtom } from "@/state/atoms/todo";
 import type { Todo } from "@/utils/interfaces/Todo";
+import { todoController } from "@/state/controller/todo";
+
 
 const HeroSection = () => {
-  const todos = useAtomValue(todoAtom);
+  const { todos } = todoController.useState(["todos"]);
 
   const [todosSize, setTodosSize] = useState<number>(0);
   const [completedSize, setCompletedSize] = useState<number>(0);
 
   useEffect(() => {
     const fetchTodosSize = () => {
-      const completed = todos.filter((todo: Todo) => todo.status === true);
+      const completed = todos?.filter((todo: Todo) => todo.status === true);
 
-      setTodosSize(todos.length);
-      setCompletedSize(completed.length);
+      setTodosSize(todos?.length || 0);
+      setCompletedSize(completed?.length || 0);
     };
 
     fetchTodosSize();
+
   }, [todos]);
 
   return (

@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { useSetAtom } from "jotai";
 import { User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
@@ -8,10 +7,10 @@ import { useRouter, usePathname } from "next/navigation";
 
 import Logo from "@/components/icons/Logo";
 import UserMenu from "@/components/UserMenu";
-import { todoAtom } from "@/state/atoms/todo";
-import { userAtom } from "@/state/atoms/user";
 import { useUser } from "@/customHooks/useUser";
 import { useLogout } from "@/customHooks/useLogout";
+import { userController } from "@/state/controller/user";
+import { todoController } from "@/state/controller/todo";
 import { QUERY_KEYS } from "@/utils/constants/QueryKeys";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 
@@ -30,9 +29,6 @@ const Header = () => {
   const { data, error } = useUser();
   const { mutate: logout, isPending } = useLogout();
 
-  const setTodos = useSetAtom(todoAtom);
-  const setUserData = useSetAtom(userAtom);
-
   const [openUserMenu, setOpenUserMenu] = useState(false);
 
   useEffect(() => {
@@ -43,8 +39,13 @@ const Header = () => {
 
     if (!data || isAuthPage) return;
 
-    setUserData(data);
-  }, [data, error, isAuthPage, setUserData]);
+    userController.login(
+      data.id,
+      data.user_metadata.name,
+      data.email,
+      data.user_metadata.imageUrl
+    );
+  }, [data, error, isAuthPage]);
 
   const handleOpenUserMenu = () => {
     setOpenUserMenu(!openUserMenu);
@@ -53,8 +54,8 @@ const Header = () => {
   const handleLogout = () => {
     logout(undefined, {
       onSuccess: () => {
-        setUserData(null);
-        setTodos([]);
+        userController.logout();
+        todoController.clearTodos();
         queryClient.removeQueries({ queryKey: [QUERY_KEYS.TODOS, data?.id] });
         queryClient.removeQueries({ queryKey: [QUERY_KEYS.USER] });
         router.push("/auth/login");

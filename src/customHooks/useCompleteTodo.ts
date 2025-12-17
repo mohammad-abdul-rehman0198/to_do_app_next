@@ -1,19 +1,17 @@
-import { useAtomValue } from "jotai";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { userAtom } from "@/state/atoms/user";
 import { API_METHODS } from "@/utils/enum/ApiMethods";
+import { userController } from "@/state/controller/user";
 import { QUERY_KEYS } from "@/utils/constants/QueryKeys";
 import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
 
 export const useCompleteTodo = () => {
   const queryClient = useQueryClient();
 
-  const userData = useAtomValue(userAtom);
-
+  const { id: userId } = userController.useState(['id']);
   const { mutate, isPending, isError, isSuccess } = useMutation({
     mutationFn: async (todoId: string) => {
-      if (!userData?.id) return;
+      if (!userId) return;
       if (!todoId) return;
 
       const res = await fetch(
@@ -21,7 +19,7 @@ export const useCompleteTodo = () => {
         {
           method: API_METHODS.PATCH,
           headers: HEADERS,
-          body: JSON.stringify({ id: todoId, userId: userData?.id }),
+          body: JSON.stringify({ id: todoId, userId: userId }),
         }
       );
 
@@ -29,7 +27,7 @@ export const useCompleteTodo = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TODOS, userData?.id],
+        queryKey: [QUERY_KEYS.TODOS, userId],
       });
     },
   });
