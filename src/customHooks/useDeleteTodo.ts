@@ -6,11 +6,11 @@ import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
 
 
 export const useDeleteTodo = () => {
-  const { id: userId } = userController.useState(['id']);
+  const { user } = userController.useState(['user']);
 
   const { mutate, isPending, isError, isSuccess } = useMutation({
     mutationFn: async (todoId: string) => {
-      if (!userId) return;
+      if (!user) return;
       if (!todoId) return;
 
       const res = await fetch(
@@ -18,7 +18,7 @@ export const useDeleteTodo = () => {
         {
           method: API_METHODS.DELETE,
           headers: HEADERS,
-          body: JSON.stringify({ id: todoId, userId: userId }),
+          body: JSON.stringify({ id: todoId, userId: user?.id }),
         }
       );
 

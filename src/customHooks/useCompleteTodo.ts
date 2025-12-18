@@ -8,10 +8,10 @@ import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
 export const useCompleteTodo = () => {
   const queryClient = useQueryClient();
 
-  const { id: userId } = userController.useState(['id']);
+  const { user } = userController.useState(['user']);
   const { mutate, isPending, isError, isSuccess } = useMutation({
     mutationFn: async (todoId: string) => {
-      if (!userId) return;
+      if (!user) return;
       if (!todoId) return;
 
       const res = await fetch(
@@ -19,7 +19,7 @@ export const useCompleteTodo = () => {
         {
           method: API_METHODS.PATCH,
           headers: HEADERS,
-          body: JSON.stringify({ id: todoId, userId: userId }),
+          body: JSON.stringify({ id: todoId, userId: user?.id }),
         }
       );
 
@@ -27,7 +27,7 @@ export const useCompleteTodo = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TODOS, userId],
+        queryKey: [QUERY_KEYS.TODOS, user?.id],
       });
     },
   });

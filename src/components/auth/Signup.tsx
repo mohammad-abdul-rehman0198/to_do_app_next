@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -9,14 +10,14 @@ import Header from "@/components/Header";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { User } from "@/utils/interfaces/User";
-import { useSignup } from "@/customHooks/useSignup";
 import { ButtonType } from "@/utils/enum/ButtonType";
+import { userController } from "@/state/controller/user";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { SignupSchema } from "@/utils/validationSchemas/SignupSchema";
 
 const Signup = () => {
-  const { mutate: signup, isPending } = useSignup();
-
+  const router = useRouter();
+  
   const {
     register,
     handleSubmit,
@@ -28,7 +29,7 @@ const Signup = () => {
 
   const onSubmit = async (data: User) => {
     try {
-      signup(data);
+      await userController.signup(data, router);
     } catch {
       toast.error(NOTIFY_MESSAGES.SIGNUP_FAILED);
     }
@@ -110,8 +111,8 @@ const Signup = () => {
             <Button
               buttonText={isSubmitting ? "Signing up..." : "Sign Up"}
               type={ButtonType.SUBMIT}
-              isLoading={isSubmitting || isPending}
-              isDisable={!isValid || isSubmitting || isPending}
+              isLoading={isSubmitting }
+              isDisable={!isValid || isSubmitting }
             />
 
             <p className="text-white text-sm text-center">

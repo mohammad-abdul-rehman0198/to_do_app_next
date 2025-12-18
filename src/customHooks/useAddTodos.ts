@@ -8,11 +8,11 @@ import { userController } from "@/state/controller/user";
 import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
 
 export const useAddTodo = () => {
-  const { id: userId } = userController.useState(['id']);
+  const { user } = userController.useState(['user']);
 
   const { mutate, isPending, isError, isSuccess } = useMutation({
     mutationFn: async (newTodo: Partial<Todo>) => {
-      if (!userId) return;
+      if (!user) return;
       if (!newTodo) return;
 
       const res = await fetch(
@@ -20,7 +20,7 @@ export const useAddTodo = () => {
         {
           method: API_METHODS.POST,
           headers: HEADERS,
-          body: JSON.stringify({ ...newTodo, userId: userId }),
+          body: JSON.stringify({ ...newTodo, userId: user?.id }),
         }
       );
 

@@ -6,32 +6,31 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { toast, ToastContainer } from "react-toastify";
-import { useQueryClient } from "@tanstack/react-query";
-import { User as UserIcon, ArrowLeft, Edit2, X } from "lucide-react";
+import { User as UserIcon, ArrowLeft, X } from "lucide-react";
 
 import Header from "@/components/Header";
 import Input from "@/components/ui/Input";
+import Edit from "@/components/icons/Edit";
 import Button from "@/components/ui/Button";
 import Loader from "@/components/ui/Loader";
 import { User } from "@/utils/interfaces/User";
-import { useUser } from "@/customHooks/useUser";
 import { ButtonType } from "@/utils/enum/ButtonType";
-import { QUERY_KEYS } from "@/utils/constants/QueryKeys";
+import { userController } from "@/state/controller/user";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
-import { useUpdateProfile } from "@/customHooks/useUpdateProfile";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { ProfileFormSchema } from "@/utils/validationSchemas/ProfileFormSchema";
 
-const UserProfile = () => {
+interface UserProfileProps {
+  userData: User;
+}
+
+const UserProfile = ({ userData }: UserProfileProps) => {
   const router = useRouter();
 
-  const queryClient = useQueryClient();
+  const { user } = userController.useState(["user"]);
 
-  const { data: user } = useUser();
-  const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
-
+  const [isEditing, setIsEditing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [isEditingName, setIsEditingName] = useState(false);
   const [profileImage, setProfileImage] = useState<File | null>(null);
 
   const {
@@ -46,6 +45,10 @@ const UserProfile = () => {
   });
 
   useEffect(() => {
+    userController.setUser(userData as User);
+  }, [userData]);
+
+  useEffect(() => {
     const updateHasChanges = () => {
       setHasChanges(isDirty || !!profileImage);
     };
@@ -53,40 +56,25 @@ const UserProfile = () => {
   }, [isDirty, profileImage]);
 
   useEffect(() => {
-    if (user?.user_metadata?.name) {
-      reset({ name: user.user_metadata.name });
+    if (user?.name) {
+      reset({ name: user.name });
     }
   }, [user, reset]);
 
   const toggleEditName = () => {
-    if (isEditingName) {
-      reset({ name: user?.user_metadata?.name || "" });
+    if (isEditing) {
+      reset({ name: user?.name || "" });
+      setProfileImage(null);
     } else {
       setFocus("name");
     }
-    setIsEditingName(!isEditingName);
+    setIsEditing(!isEditing);
   };
 
   const onSubmit = async (data: User) => {
     try {
-      updateProfile(
-        {
-          name: data?.name || "",
-          profileImage,
-          imageUrl: user?.user_metadata?.imageUrl || null,
-        },
-        {
-          onSuccess: (data) => {
-            if (data.success) {
-              queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER] });
-              toast.success(data.message);
-              setIsEditingName(false);
-              setHasChanges(false);
-              setProfileImage(null);
-            }
-          },
-        }
-      );
+      await userController.updateUser(data, profileImage as File);
+      setIsEditing(false);
     } catch {
       toast.error(NOTIFY_MESSAGES.PROFILE_UPDATE_FAILED);
     }
@@ -97,12 +85,26 @@ const UserProfile = () => {
       <Header />
       <div className="flex justify-center bg-black px-4">
         <div className="relative w-full max-w-md  p-6 rounded-2xl shadow-lg border border-[#c2b39a] ">
-          <Button
-            variant={ButtonVariant.ICON}
-            logo={<ArrowLeft />}
-            onClick={() => router.back()}
-            className="invert"
-          />
+          <div className="flex items-center justify-between">
+            <Button
+              variant={ButtonVariant.ICON}
+              logo={<ArrowLeft />}
+              onClick={() => router.push("/")}
+              className="invert"
+            />
+            {isEditing ? (
+              <X
+                className="cursor-pointer text-red-500"
+                onClick={toggleEditName}
+              />
+            ) : (
+              <Button
+                variant={ButtonVariant.ICON}
+                onClick={toggleEditName}
+                logo={<Edit />}
+              />
+            )}
+          </div>
 
           <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">
             User Profile
@@ -113,7 +115,7 @@ const UserProfile = () => {
             className="flex flex-col items-center gap-5 w-full"
           >
             <div className="w-32 h-32 relative rounded-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700">
-              {isUpdating ? (
+              {isSubmitting ? (
                 <Loader />
               ) : profileImage ? (
                 <Image
@@ -124,9 +126,9 @@ const UserProfile = () => {
                   loading="eager"
                   className="object-cover"
                 />
-              ) : user?.user_metadata?.imageUrl ? (
+              ) : user?.imageUrl ? (
                 <Image
-                  src={user?.user_metadata?.imageUrl || ""}
+                  src={user?.imageUrl || ""}
                   alt="Profile"
                   fill
                   sizes="128px"
@@ -137,52 +139,42 @@ const UserProfile = () => {
                 <UserIcon className="w-16 h-16 text-gray-400" />
               )}
             </div>
-
-            <label className="cursor-pointer text-sm text-blue-500 hover:underline">
-              Change Profile Image
-              <Input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={(e) =>
-                  e.target.files && setProfileImage(e.target.files[0])
-                }
-              />
-            </label>
+            {isEditing && (
+              <label className="cursor-pointer text-sm text-blue-500 hover:underline">
+                Change Profile Image
+                <Input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) =>
+                    e.target.files && setProfileImage(e.target.files[0])
+                  }
+                />
+              </label>
+            )}
 
             <div className="w-full relative">
               <Input
                 label="Name:"
                 {...register("name")}
-                readOnly={!isEditingName}
-                className="bg-transparent"
+                readOnly={!isEditing}
+                className={`${!isEditing && "bg-transparent"}`}
               />
-              {isEditingName ? (
-                <X
-                  className="absolute right-3 top-[38px] w-5 h-5 cursor-pointer text-red-500"
-                  onClick={toggleEditName}
-                />
-              ) : (
-                <Edit2
-                  className="absolute right-3 top-[38px] w-5 h-5 cursor-pointer text-[#c2b39a]"
-                  onClick={toggleEditName}
-                />
-              )}
             </div>
 
             <Input
               label="Email:"
               value={user?.email || ""}
               readOnly
-              className="bg-transparent"
+              className={`${!isEditing && "bg-transparent"}`}
             />
 
-            {hasChanges && (
+            {isEditing && (
               <Button
                 type={ButtonType.SUBMIT}
                 buttonText={isSubmitting ? "Updating..." : "Update Profile"}
-                isLoading={isSubmitting || isUpdating}
-                isDisable={!isValid || isSubmitting || isUpdating}
+                isLoading={isSubmitting}
+                isDisable={!isValid || isSubmitting || !hasChanges}
                 variant={ButtonVariant.PRIMARY}
               />
             )}

@@ -1,37 +1,124 @@
+import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 import { StateController } from "jotai-controller";
 
+import { supabase } from "@/db/supabase/client";
+import { login } from "@/app/actions/auth/login";
+import { signup } from "@/app/actions/auth/signup";
+import { logout } from "@/app/actions/auth/logout";
 import type { User } from "@/utils/interfaces/User";
+import { sentEmail } from "@/app/actions/auth/sentEmail";
+import { updateProfile } from "@/app/actions/profile/profile";
+import { resetPassword } from "@/app/actions/auth/resetPassword";
+import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 
-class UserController extends StateController<Partial<User>> {
-    constructor() {
-      super('user', {
-        id: '',
-        name: '',
-        email: '',
-        imageUrl: ''
-      });
-      
-      this.autoSubscribeOnMethods(this);
-    }
-  
-    login(id: string, name: string, email: string, imageUrl: string) {
-      this.setState({
-        id,
-        name,
-        email,
-        imageUrl,
-      });
-    }
-  
-    logout() {
-      this.setState({
-        id: '',
-        name: '',
-        email: '',
-        imageUrl: ''
-      });
+interface UserState {
+  user: User;
+}
+class UserController extends StateController<Partial<UserState>> {
+  constructor() {
+    super("user", {
+      user: undefined,
+    });
+
+    this.autoSubscribeOnMethods(this);
+  }
+
+  setUser(user: User) {
+    this.setState({
+      user: user,
+    });
+  }
+
+  async updateUser(updateProfileData: User, profileImage?: File) {
+    try {
+      if (profileImage) {
+        const fileExt = profileImage.name.split(".").pop();
+        const fileName = `user_${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("profile-images")
+          .upload(fileName, profileImage, { cacheControl: "0", upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabase.storage
+          .from("profile-images")
+          .getPublicUrl(uploadData.path);
+
+        updateProfileData.imageUrl = publicUrlData.publicUrl;
+      }
+
+      const {
+        success,
+        user: updatedUser,
+        message,
+      } = await updateProfile(updateProfileData);
+      if (success) {
+        toast.success(message || NOTIFY_MESSAGES.PROFILE_UPDATED_SUCCESS);
+        this.setState({
+          user: updatedUser,
+        });
+      } else {
+        toast.error(message || NOTIFY_MESSAGES.PROFILE_UPDATE_FAILED);
+      }
+    } catch (error) {
+      toast.error((error as Error).message || NOTIFY_MESSAGES.SERVER_ERROR);
     }
   }
 
+  async signup(user: User, router: ReturnType<typeof useRouter>) {
+    const { success, message } = await signup(user);
+    if (success) {
+      toast.success(message);
+      router.push("/auth/login");
+    } else {
+      toast.error(message);
+    }
+  }
 
-  export const userController = new UserController();
+  async login(user: User, router: ReturnType<typeof useRouter>) {
+    const { success, message } = await login(user);
+    if (success) {
+      toast.success(message);
+      router.push("/");
+    } else {
+      toast.error(message);
+    }
+  }
+
+  async resetPasswordEmail(email: string) {
+    const { success, message } = await sentEmail(email);
+    if (success) {
+      toast.success(message);
+    } else {
+      toast.error(message);
+    }
+  }
+
+  async resetPassword(
+    resetPasswordData: User,
+    router: ReturnType<typeof useRouter>
+  ) {
+    const { success, message } = await resetPassword(resetPasswordData);
+    if (success) {
+      toast.success(message);
+      router.push("/auth/login");
+    } else {
+      toast.error(message);
+    }
+  }
+
+  async clearUser() {
+    const { success, message } = await logout();
+    if (success) {
+      toast.success(message);
+      this.setState({
+        user: undefined,
+      });
+    } else {
+      toast.error(message);
+    }
+  }
+}
+
+export const userController = new UserController();

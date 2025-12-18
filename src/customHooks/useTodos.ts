@@ -9,16 +9,16 @@ import { API_END_POINTS, HEADERS } from "@/utils/constants/apis/Index";
 
 
 const useTodos = () => {
-  const { id: userId } = userController.useState(["id"]);
+  const { user } = userController.useState(["user"]);
   
   const { data, isLoading, error } = useQuery({
-    queryKey: [QUERY_KEYS.TODOS, userId],
+    queryKey: [QUERY_KEYS.TODOS, user?.id],
     queryFn: async () => {
-      if (!userId) return [];
+      if (!user) return [];
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL + API_END_POINTS.TODOS}?userId=${
-          userId
+          user?.id
         }`,
         {
           method: API_METHODS.GET,
@@ -29,7 +29,7 @@ const useTodos = () => {
       return await res.json();
     },
 
-    enabled: !! userId,
+    enabled: !! user?.id,
   });
 
   return { data, isLoading, error };

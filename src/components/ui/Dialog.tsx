@@ -38,7 +38,7 @@ const Dialog = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors, isValid, isSubmitting },
+    formState: { errors, isValid, isSubmitting, isDirty },
   } = useForm<FormData>({
     resolver: yupResolver(FormSchema),
     mode: "onChange",
@@ -151,7 +151,7 @@ const Dialog = ({
                 type={ButtonType.SUBMIT}
                 variant={ButtonVariant.PRIMARY}
                 buttonText={BUTTON_MESSAGES[variant]}
-                isDisable={!isValid}
+                isDisable={!isValid || !isDirty || isSubmitting}
                 isLoading={isLoading || isSubmitting}
               />
             </div>

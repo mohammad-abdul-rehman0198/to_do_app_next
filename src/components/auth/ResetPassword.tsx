@@ -13,7 +13,7 @@ import Button from "@/components/ui/Button";
 import { User } from "@/utils/interfaces/User";
 import { supabase } from "@/db/supabase/client";
 import { ButtonType } from "@/utils/enum/ButtonType";
-import { useResetPassword } from "@/customHooks/useResetPassword";
+import { userController } from "@/state/controller/user";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { ResetPasswordSchema } from "@/utils/validationSchemas/ResetPasswordSchema";
 
@@ -22,9 +22,6 @@ const ForgotPassword = () => {
 
   const searchParams = useSearchParams();
   const code = searchParams.get("code");
-
-  const { mutate: resetPassword, isPending: isResettingPassword } =
-    useResetPassword();
 
   const {
     register,
@@ -48,12 +45,7 @@ const ForgotPassword = () => {
 
   const onSubmit = async (data: User) => {
     try {
-      resetPassword(data, {
-        onSuccess: async () => {
-          await supabase.auth.signOut();
-          router.push("/auth/login");
-        },
-      });
+      await userController.resetPassword(data, router);
     } catch {
       toast.error(NOTIFY_MESSAGES.PASSWORD_RESET_FAILED);
     }
@@ -106,8 +98,8 @@ const ForgotPassword = () => {
             <Button
               buttonText={isSubmitting ? "Resetting..." : "Reset Password"}
               type={ButtonType.SUBMIT}
-              isLoading={isSubmitting || isResettingPassword}
-              isDisable={!isValid || isSubmitting || isResettingPassword}
+              isLoading={isSubmitting}
+              isDisable={!isValid || isSubmitting}
             />
 
             <p className="text-white text-sm text-center">

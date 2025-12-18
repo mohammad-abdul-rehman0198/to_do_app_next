@@ -1,33 +1,20 @@
 "use client";
 
-import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import { CheckCircle, Circle } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 
 import Edit from "@/components/icons/Edit";
 import Dialog from "@/components/ui/Dialog";
-import Loader from "@/components/ui/Loader";
 import Button from "@/components/ui/Button";
-import useTodos from "@/customHooks/useTodos";
 import Delete from "@/components/icons/Delete";
 import type { Todo } from "@/utils/interfaces/Todo";
-import { useEditTodo } from "@/customHooks/useEditTodo";
-import { QUERY_KEYS } from "@/utils/constants/QueryKeys";
 import { todoController } from "@/state/controller/todo";
-import { userController } from "@/state/controller/user";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import { DialogVariant } from "@/utils/enum/DialogVariant";
 import type { FormData } from "@/utils/interfaces/FormData";
-import { useDeleteTodo } from "@/customHooks/useDeleteTodo";
-import { useCompleteTodo } from "@/customHooks/useCompleteTodo";
-import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
-
 
 const Todos = () => {
-  const queryClient = useQueryClient();
-
-  const userData = userController.useState(["id", "name", "email", "imageUrl"]);
+  const [isLoading, setIsLoading] = useState(false);
   const { todos } = todoController.useState(["todos"]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -37,18 +24,11 @@ const Todos = () => {
     null
   );
 
-  const { isLoading, data, error } = useTodos();
-  const { mutate: updateTodo, isPending: isEditing } = useEditTodo();
-  const { mutate: deleteTodo, isPending: isDeleting } = useDeleteTodo();
-  const { mutate: completeTodo, isPending: isCompleting } = useCompleteTodo();
-
   useEffect(() => {
-    if (data) {
-      todoController.setTodos(data.todoList || []);
-    } else if (error) {
-      toast.error(error.message);
-    }
-  }, [data, error]);
+    todoController.setTodos(todos || []);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openDeleteDialog = (id: string) => {
     setSelectedId(id);
@@ -80,61 +60,35 @@ const Todos = () => {
     }
   };
 
-  const handleCompleteTodo = (id: string) => {
-    completeTodo(id, {
-      onSuccess: () => {
-        toast.success(NOTIFY_MESSAGES.TODO_COMPLETE_SUCCESS);
-        setDialogOpen(false);
-      },
-      onError: () => {
-        toast.error(NOTIFY_MESSAGES.TODO_COMPLETE_FAILED);
-      },
+  const handleCompleteTodo = async (id: string) => {
+    setIsLoading(true);
+    await todoController.toggleTodo(id);
+    setIsLoading(false);
+    setDialogOpen(false);
+  };
+
+  const handleDeleteTodo = async (id: string) => {
+    setIsLoading(true);
+    await todoController.deleteTodo(id);
+    setIsLoading(false);
+    setDialogOpen(false);
+  };
+
+  const handleSaveEditTodo = async (form: FormData) => {
+    setIsLoading(true);
+    await todoController.updateTodo({
+      id: editTodo?.id || "",
+      taskName: form.taskName,
+      description: form.description || "",
     });
+    setIsLoading(false);
+    setDialogOpen(false);
+    setEditTodo(null);
   };
-
-  const handleDeleteTodo = (id: string) => {
-    deleteTodo(id, {
-      onSuccess: () => {
-        todoController.deleteTodo(id);
-        queryClient.invalidateQueries({
-          queryKey: [QUERY_KEYS.TODOS, userData?.id],
-        });
-        toast.success(NOTIFY_MESSAGES.TODO_DELETE_SUCCESS);
-        setDialogOpen(false);
-      },
-      onError: () => {
-        toast.error(NOTIFY_MESSAGES.TODO_DELETE_FAILED);
-      },
-    });
-  };
-
-  const handleSaveEditTodo = (form: FormData) => {
-    updateTodo(
-      { data: form, editTodoId: editTodo?.id || "" },
-      {
-        onSuccess: () => {
-          toast.success(NOTIFY_MESSAGES.TODO_UPDATE_SUCCESS);
-          setDialogOpen(false);
-          setEditTodo(null);
-        },
-        onError: () => {
-          toast.error(NOTIFY_MESSAGES.TODO_UPDATE_FAILED);
-        },
-      }
-    );
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader />
-      </div>
-    );
-  }
 
   return (
     <>
-      <ol className="w-[70%] max-[510px]:w-[90%] max-w-[455px] space-y-[27px]">
+      <ol className="w-[70%] max-[510px]:w-[90%] max-w-[455px] space-y-[27px] mb-6">
         {todos?.map((todo: Todo) => (
           <li
             key={todo.id}
@@ -144,7 +98,7 @@ const Todos = () => {
               <div className="flex items-center gap-2">
                 <Button
                   variant={ButtonVariant.ICON}
-                  onClick={() => openCompleteDialog(todo.id)}
+                  onClick={() => openCompleteDialog(todo?.id || "")}
                   logo={
                     todo.status ? (
                       <CheckCircle color="#22C55E" />
@@ -181,7 +135,7 @@ const Todos = () => {
                 />
                 <Button
                   variant={ButtonVariant.ICON}
-                  onClick={() => openDeleteDialog(todo.id)}
+                  onClick={() => openDeleteDialog(todo?.id || "")}
                   logo={<Delete />}
                 />
               </div>
@@ -203,7 +157,7 @@ const Todos = () => {
         variant={dialogVariant as DialogVariant}
         taskName={editTodo?.taskName}
         taskDescription={editTodo?.description}
-        isLoading={isCompleting || isDeleting || isEditing}
+        isLoading={isLoading}
       />
     </>
   );

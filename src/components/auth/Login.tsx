@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -9,14 +10,13 @@ import Header from "@/components/Header";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { User } from "@/utils/interfaces/User";
-
-import { useLogin } from "@/customHooks/useLogin";
 import { ButtonType } from "@/utils/enum/ButtonType";
+import { userController } from "@/state/controller/user";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { LoginSchema } from "@/utils/validationSchemas/LoginSchema";
 
 const Login = () => {
-  const { mutate: login, isPending } = useLogin();
+  const router = useRouter();
 
   const {
     register,
@@ -29,7 +29,7 @@ const Login = () => {
 
   const onSubmit = async (data: User) => {
     try {
-      login(data);
+      await userController.login(data, router);
     } catch {
       toast.error(NOTIFY_MESSAGES.LOGIN_FAILED);
     }
@@ -89,8 +89,8 @@ const Login = () => {
             <Button
               buttonText={isSubmitting ? "Logging In..." : "Log In"}
               type={ButtonType.SUBMIT}
-              isLoading={isSubmitting || isPending}
-              isDisable={!isValid || isSubmitting || isPending}
+              isLoading={isSubmitting}
+              isDisable={!isValid || isSubmitting}
             />
 
             <p className="text-white text-sm text-center">

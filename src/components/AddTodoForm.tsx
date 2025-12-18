@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { toast } from "react-toastify";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm, type SubmitHandler } from "react-hook-form";
@@ -5,8 +6,6 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import Add from "@/components/icons/Add";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
-import { Todo } from "@/utils/interfaces/Todo";
-import { useAddTodo } from "@/customHooks/useAddTodos";
 import { todoController } from "@/state/controller/todo";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import type { FormData } from "@/utils/interfaces/FormData";
@@ -17,8 +16,8 @@ import { FormSchema } from "@/utils/validationSchemas/TodoFormSchema";
 
 const Form = () => {
   const { todos } = todoController.useState(["todos"]);
-  
-  const { mutate: addTodo, isPending: isAdding } = useAddTodo();
+
+  const [isAdding, setIsAdding] = useState(false);
 
   const {
     register,
@@ -35,21 +34,13 @@ const Form = () => {
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     try {
-      const newTodo: Partial<Todo> = {
+      setIsAdding(true);
+     await todoController.addTodo({
         taskName: data.taskName,
         description: data.description || "",
         status: false,
-      };
-
-      addTodo(newTodo, {
-        onSuccess: (data) => {
-          todoController.addTodo(data.newTodo);
-          toast.success(NOTIFY_MESSAGES.TODO_ADD_SUCCESS);
-        },
-        onError: () => {
-          toast.error(NOTIFY_MESSAGES.TODO_ADD_FAILED);
-        },
       });
+      setIsAdding(false);
     } catch {
       toast.error(NOTIFY_MESSAGES.TODO_ADD_FAILED);
     } finally {
@@ -72,8 +63,8 @@ const Form = () => {
         <Button
           variant={ButtonVariant.PRIMARY}
           logo={<Add />}
-          isLoading={isSubmitting || isAdding}
-          isDisable={!isValid || isAdding}
+          isLoading={isAdding || isSubmitting}
+          isDisable={!isValid}
         />
       </form>
 

@@ -12,16 +12,13 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { User } from "@/utils/interfaces/User";
 import { ButtonType } from "@/utils/enum/ButtonType";
+import { userController } from "@/state/controller/user";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
-import { useResetPasswordEmail } from "@/customHooks/useResetPasswordEmail";
 import { ResetPasswordEmailSchema } from "@/utils/validationSchemas/ResetPasswordEmailSchema";
 
 const ResetPasswordEmail = () => {
   const router = useRouter();
-
-  const { mutate: resetPasswordEmail, isPending: isResettingPasswordEmail } =
-    useResetPasswordEmail();
 
   const {
     register,
@@ -34,7 +31,7 @@ const ResetPasswordEmail = () => {
 
   const onSubmit = async (data: User) => {
     try {
-      resetPasswordEmail(data);
+      await userController.resetPasswordEmail(data.email || "");
     } catch {
       toast.error(NOTIFY_MESSAGES.PASSWORD_RESET_EMAIL_NOT_SENT);
     }
@@ -79,8 +76,8 @@ const ResetPasswordEmail = () => {
             <Button
               buttonText={isSubmitting ? "Sending..." : "Send Reset Email"}
               type={ButtonType.SUBMIT}
-              isLoading={isSubmitting || isResettingPasswordEmail}
-              isDisable={!isValid || isSubmitting || isResettingPasswordEmail}
+              isLoading={isSubmitting}
+              isDisable={!isValid || isSubmitting}
             />
 
             <p className="text-white text-sm text-center">

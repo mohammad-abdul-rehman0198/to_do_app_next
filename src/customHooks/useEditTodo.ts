@@ -13,11 +13,11 @@ interface EditTodo {
 export const useEditTodo = () => {
   const queryClient = useQueryClient();
 
-  const { id: userId } = userController.useState(["id"]);
+  const { user } = userController.useState(["user"]);
 
   const { mutate, isPending, isError, isSuccess } = useMutation({
     mutationFn: async ({ data, editTodoId }: EditTodo) => {
-      if (!userId) return;
+      if (!user) return;
       if (!editTodoId) return;
 
       const response = await fetch(
@@ -27,7 +27,7 @@ export const useEditTodo = () => {
           headers: HEADERS,
           body: JSON.stringify({
             id: editTodoId,
-            userId: userId,
+            userId: user?.id,
             taskName: data.taskName,
             description: data.description || "",
           }),
@@ -38,7 +38,7 @@ export const useEditTodo = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TODOS, userId],
+        queryKey: [QUERY_KEYS.TODOS, user?.id],
       });
     },
   });

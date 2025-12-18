@@ -17,7 +17,7 @@ const UserMenu = ({ onLogout, isLoading }: UserMenuProps) => {
 
   return (
     <div
-      className="absolute top-18 right-4  max-md:top-32 w-[220px] flex flex-col gap-3 
+      className="absolute top-18 right-4 w-[220px] flex flex-col gap-3 
   bg-[#111827] border border-gray-700 rounded-[14px] 
   shadow-xl p-4 z-50"
     >
