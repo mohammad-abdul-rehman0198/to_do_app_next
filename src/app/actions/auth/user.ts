@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-
 import { User } from "@/utils/interfaces/User";
 import { getServerSession } from "@/utils/actions/GetServerSession";
 
@@ -13,7 +11,7 @@ export const getUser = async () => {
   } = await supabase.auth.getUser();
 
   if (!user || error) {
-    redirect("/auth/login");
+    return null;
   }
 
   const userData: User = {

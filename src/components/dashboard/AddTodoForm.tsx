@@ -8,7 +8,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { todoController } from "@/state/controller/todo";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
-import type { FormData } from "@/utils/interfaces/FormData";
+import type { FormData } from "@/utils/interfaces/TodoFormData";
 import { DEFAULT_VALUES } from "@/utils/constants/DefaultValues";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { FormSchema } from "@/utils/validationSchemas/TodoFormSchema";

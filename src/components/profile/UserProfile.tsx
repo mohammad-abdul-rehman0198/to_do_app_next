@@ -8,7 +8,6 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { toast, ToastContainer } from "react-toastify";
 import { User as UserIcon, ArrowLeft, X } from "lucide-react";
 
-import Header from "@/components/Header";
 import Input from "@/components/ui/Input";
 import Edit from "@/components/icons/Edit";
 import Button from "@/components/ui/Button";
@@ -20,11 +19,7 @@ import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { ProfileFormSchema } from "@/utils/validationSchemas/ProfileFormSchema";
 
-interface UserProfileProps {
-  userData: User;
-}
-
-const UserProfile = ({ userData }: UserProfileProps) => {
+const UserProfile = () => {
   const router = useRouter();
 
   const { user } = userController.useState(["user"]);
@@ -44,9 +39,6 @@ const UserProfile = ({ userData }: UserProfileProps) => {
     mode: "onChange",
   });
 
-  useEffect(() => {
-    userController.setUser(userData as User);
-  }, [userData]);
 
   useEffect(() => {
     const updateHasChanges = () => {
@@ -82,7 +74,6 @@ const UserProfile = ({ userData }: UserProfileProps) => {
 
   return (
     <>
-      <Header />
       <div className="flex justify-center bg-black px-4">
         <div className="relative w-full max-w-md  p-6 rounded-2xl shadow-lg border border-[#c2b39a] ">
           <div className="flex items-center justify-between">
@@ -164,9 +155,10 @@ const UserProfile = ({ userData }: UserProfileProps) => {
 
             <Input
               label="Email:"
+              disabled
               value={user?.email || ""}
               readOnly
-              className={`${!isEditing && "bg-transparent"}`}
+              className={`${!isEditing ? "bg-transparent" : "opacity-50 cursor-not-allowed"}`}
             />
 
             {isEditing && (

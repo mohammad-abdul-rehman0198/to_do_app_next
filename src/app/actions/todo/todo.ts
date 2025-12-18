@@ -14,9 +14,10 @@ const getTodos = async () => {
     const { session, error } = await getServerSession();
     const userData = await getUser();
 
-    if (error || !session || !userData.id) {
+    if (error || !session || !userData?.id) {
       return {
         success: false,
+        todos: [],
         message: NOTIFY_MESSAGES.UNAUTHORIZED,
       };
     }
@@ -25,7 +26,7 @@ const getTodos = async () => {
       .select()
       .from(todos)
       .where(
-        and(eq(todos.userId, userData.id as string), isNull(todos.deletedAt))
+        and(eq(todos.userId, userData?.id as string), isNull(todos.deletedAt))
       );
 
     const todoss = todoList.map((todo) => ({
@@ -45,6 +46,7 @@ const getTodos = async () => {
   } catch {
     return {
       success: false,
+      todos: [],
       message: NOTIFY_MESSAGES.SERVER_ERROR,
     };
   }
@@ -55,7 +57,7 @@ const addTodo = async (data: Todo) => {
     const { session, error } = await getServerSession();
     const userData = await getUser();
 
-    if (error || !session || !userData.id) {
+    if (error || !session || !userData?.id) {
       return {
         success: false,
         message: NOTIFY_MESSAGES.UNAUTHORIZED,
@@ -92,7 +94,7 @@ const updateTodo = async (data: Partial<Todo>) => {
     const { session } = await getServerSession();
     const userData = await getUser();
 
-    if (!session || !userData.id) {
+    if (!session || !userData?.id) {
       throw new Error(NOTIFY_MESSAGES.UNAUTHORIZED);
     }
 
@@ -139,7 +141,7 @@ const deleteTodo = async (id: string) => {
     const { session } = await getServerSession();
     const userData = await getUser();
 
-    if (!session || !userData.id) {
+    if (!session || !userData?.id) {
       return {
         success: false,
         message: NOTIFY_MESSAGES.UNAUTHORIZED,
@@ -183,7 +185,7 @@ const toggleTodoStatus = async (id: string) => {
     const { session } = await getServerSession();
     const userData = await getUser();
 
-    if (!session || !userData.id) {
+    if (!session || !userData?.id) {
       return {
         success: false,
         message: NOTIFY_MESSAGES.UNAUTHORIZED,
@@ -206,7 +208,7 @@ const toggleTodoStatus = async (id: string) => {
       .update(todos)
       .set({
         status: !existingTodo.status,
-        updatedBy: userData.id,
+        updatedBy: userData?.id,
         updatedAt: new Date(),
       })
       .where(eq(todos.id, id))

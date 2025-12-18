@@ -7,7 +7,6 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { toast, ToastContainer } from "react-toastify";
 import { useSearchParams, useRouter } from "next/navigation";
 
-import Header from "@/components/Header";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { User } from "@/utils/interfaces/User";
@@ -52,10 +51,9 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-
-      <section className="h-full grow flex items-start justify-center">
+    <div className="lex flex-col">
+    
+      <section className="grow flex items-start justify-center">
         <div className="w-[90%] max-w-[420px] rounded-[11px] p-6 border border-[#c2b39a]">
           <form
             onSubmit={handleSubmit(onSubmit)}
