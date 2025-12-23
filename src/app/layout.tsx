@@ -33,7 +33,7 @@ export default async function RootLayout({
 }>) {
   const userData = await getUser();
   const { todos: todoList } = await getTodos();
-  
+
   return (
     <html lang="en">
       <body
@@ -42,7 +42,7 @@ export default async function RootLayout({
         <JotaiProvider>
           <Header />
           {children}
-           <StateHydrator user={ userData as User } todos={ todoList as Todo[] } />
+           <StateHydrator user={ userData.user as User } todos={ todoList as Todo[] } />
         </JotaiProvider>
       </body>
     </html>

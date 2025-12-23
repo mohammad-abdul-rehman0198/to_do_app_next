@@ -13,12 +13,8 @@ type Props = {
 
 export default function StateHydrator({ user, todos }: Props) {
   useEffect(() => {
-    if (user) {
-      userController.setUser(user);
-    }
-    if (todos.length) {
-      todoController.setTodos(todos);
-    }
+    userController.setUser(user as User);
+    todoController.setTodos(todos);
   }, [user, todos]);
 
   return null;

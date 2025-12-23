@@ -19,6 +19,7 @@
     "drizzle-orm": "^0.45.0",
     "jotai": "^2.16.0",
     "jotai-controller": "^1.0.13",
+    "js-cookie": "^3.0.5",
     "lucide-react": "^0.556.0",
     "next": "16.0.6",
     "pg": "^8.16.3",
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

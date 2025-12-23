@@ -39,7 +39,6 @@ const UserProfile = () => {
     mode: "onChange",
   });
 
-
   useEffect(() => {
     const updateHasChanges = () => {
       setHasChanges(isDirty || !!profileImage);
@@ -65,6 +64,7 @@ const UserProfile = () => {
 
   const onSubmit = async (data: User) => {
     try {
+      data.imageUrl = user?.imageUrl || "";
       await userController.updateUser(data, profileImage as File);
       setIsEditing(false);
     } catch {
@@ -158,7 +158,9 @@ const UserProfile = () => {
               disabled
               value={user?.email || ""}
               readOnly
-              className={`${!isEditing ? "bg-transparent" : "opacity-50 cursor-not-allowed"}`}
+              className={`${
+                !isEditing ? "bg-transparent" : "opacity-50 cursor-not-allowed"
+              }`}
             />
 
             {isEditing && (

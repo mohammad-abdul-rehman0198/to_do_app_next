@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import Cookies from "js-cookie";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { toast, ToastContainer } from "react-toastify";
-import { useSearchParams, useRouter } from "next/navigation";
 
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { User } from "@/utils/interfaces/User";
-import { supabase } from "@/db/supabase/client";
 import { ButtonType } from "@/utils/enum/ButtonType";
 import { userController } from "@/state/controller/user";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
@@ -18,9 +18,6 @@ import { ResetPasswordSchema } from "@/utils/validationSchemas/ResetPasswordSche
 
 const ForgotPassword = () => {
   const router = useRouter();
-
-  const searchParams = useSearchParams();
-  const code = searchParams.get("code");
 
   const {
     register,
@@ -32,15 +29,25 @@ const ForgotPassword = () => {
   });
 
   useEffect(() => {
-    const exchangeSession = async () => {
-      if (!code) {
-        return;
+    const setSession = async () => {
+      const hash = window.location.hash;
+      if (!hash) return router.push("/auth/login");
+
+      const params = new URLSearchParams(hash.slice(1));
+      const access_token = params.get("access_token");
+      const refresh_token = params.get("refresh_token");
+      const type = params.get("type");
+
+      if (type !== "recovery" || !access_token || !refresh_token) {
+        return router.push("/auth/login");
       }
-      await supabase.auth.exchangeCodeForSession(window.location.href);
+
+      Cookies.set("sb-access-token", access_token || "", { expires: 1 });
+      Cookies.set("sb-refresh-token", refresh_token || "", { expires: 1 });
     };
 
-    exchangeSession();
-  }, [code]);
+    setSession();
+  }, [router]);
 
   const onSubmit = async (data: User) => {
     try {
@@ -52,7 +59,6 @@ const ForgotPassword = () => {
 
   return (
     <div className="lex flex-col">
-    
       <section className="grow flex items-start justify-center">
         <div className="w-[90%] max-w-[420px] rounded-[11px] p-6 border border-[#c2b39a]">
           <form

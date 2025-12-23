@@ -1,54 +1,44 @@
-"use server";
-
-import { eq } from "drizzle-orm";
-
-import { db } from "@/db";
-import { users } from "@/db/schemas/user";
 import { User } from "@/utils/interfaces/User";
+import { API_METHODS } from "@/utils/enum/ApiMethods";
+import { getCookies } from "@/utils/actions/GetCookies";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
-import { getServerSession } from "@/utils/actions/GetServerSession";
 
-export const updateProfile = async (updateProfileData: User) => {
+export const updateProfile = async (profileData: User) => {
   try {
-    const { supabase, session } = await getServerSession();
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL_API_URL}/users/update-profile`,
+      {
+        method: API_METHODS.PUT,
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: await getCookies(),
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: profileData.name,
+          imageUrl: profileData.imageUrl,
+        }),
+      }
+    );
 
-    if (!session) {
-      return { success: false, message: NOTIFY_MESSAGES.UNAUTHORIZED };
-    }
+    const data = await res.json();
 
-    const { error } = await supabase.auth.updateUser({
-      data: {
-        name: updateProfileData.name,
-        imageUrl: updateProfileData.imageUrl,
-      },
-    });
-
-    if (error) {
+    if (!res.ok) {
       return {
         success: false,
-        message: error.message || NOTIFY_MESSAGES.PROFILE_UPDATE_FAILED,
+        message: data.message || NOTIFY_MESSAGES.PROFILE_UPDATE_FAILED,
       };
     }
 
-    await db
-      .update(users)
-      .set({
-        name: updateProfileData.name,
-        imageUrl: updateProfileData.imageUrl,
-        updatedAt: new Date(),
-        updatedBy: session.user.id,
-      })
-      .where(eq(users.id, session.user.id));
-
     return {
       success: true,
-      user: {
-        name: updateProfileData.name,
-        imageUrl: updateProfileData.imageUrl,
-      },
-      message: NOTIFY_MESSAGES.PROFILE_UPDATED_SUCCESS,
+      user: data.user,
+      message: data.message,
     };
   } catch {
-    return { success: false, message: NOTIFY_MESSAGES.SERVER_ERROR };
+    return {
+      success: false,
+      message: NOTIFY_MESSAGES.NETWORK_ERROR,
+    };
   }
 };

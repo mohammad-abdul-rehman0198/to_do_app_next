@@ -1,21 +1,35 @@
-"use server";
-
+import { API_METHODS } from "@/utils/enum/ApiMethods";
+import { getCookies } from "@/utils/actions/GetCookies";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
-import { getServerSession } from "@/utils/actions/GetServerSession";
 
 export const logout = async () => {
   try {
-    const { supabase } = await getServerSession();
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL_API_URL}/users/logout`, {
+      method: API_METHODS.POST,
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: await getCookies(),
+      },
+      credentials: "include",
+    });
 
-    const { error } = await supabase.auth.signOut();
+    const data = await res.json();
 
-    if (error) {
-      return { success: false, message: error.message };
+    if (!res.ok) {
+      return {
+        success: false,
+        message: data.message || NOTIFY_MESSAGES.LOGOUT_FAILED,
+      };
     }
 
-    return { success: true, message: NOTIFY_MESSAGES.LOGOUT_SUCCESS };
+    return {
+      success: true,
+      message: data.message,
+    };
   } catch {
-    
-    return { success: false, message: NOTIFY_MESSAGES.LOGOUT_FAILED };
+    return {
+      success: false,
+      message: NOTIFY_MESSAGES.NETWORK_ERROR,
+    };
   }
-}
+};

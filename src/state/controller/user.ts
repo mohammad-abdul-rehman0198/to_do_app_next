@@ -1,3 +1,5 @@
+"use client";
+
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { StateController } from "jotai-controller";
@@ -7,6 +9,8 @@ import { login } from "@/app/actions/auth/login";
 import { signup } from "@/app/actions/auth/signup";
 import { logout } from "@/app/actions/auth/logout";
 import type { User } from "@/utils/interfaces/User";
+import { getCookies } from "@/utils/actions/GetCookies";
+import { todoController } from "@/state/controller/todo";
 import { sentEmail } from "@/app/actions/auth/sentEmail";
 import { updateProfile } from "@/app/actions/profile/profile";
 import { resetPassword } from "@/app/actions/auth/resetPassword";
@@ -33,8 +37,27 @@ class UserController extends StateController<Partial<UserState>> {
   async updateUser(updateProfileData: User, profileImage?: File) {
     try {
       if (profileImage) {
+        const cookies = await getCookies();
+        const cookiesArray = cookies.split("; ");
+
+        let accessToken = "";
+        let refreshToken = "";
+
+        cookiesArray.forEach((cookie) => {
+          const [name, value] = cookie.split("=");
+          if (name === "sb-access-token") accessToken = value;
+          if (name === "sb-refresh-token") refreshToken = value;
+        });
+
         const fileExt = profileImage.name.split(".").pop();
         const fileName = `user_${Date.now()}.${fileExt}`;
+       
+        const { error: setSessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (setSessionError) throw setSessionError;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("profile-images")
           .upload(fileName, profileImage, { cacheControl: "0", upsert: true });
@@ -81,6 +104,7 @@ class UserController extends StateController<Partial<UserState>> {
     if (success) {
       toast.success(message);
       router.push("/");
+      router.refresh();
     } else {
       toast.error(message);
     }
@@ -112,6 +136,7 @@ class UserController extends StateController<Partial<UserState>> {
     const { success, message } = await logout();
     if (success) {
       toast.success(message);
+      todoController.clearTodos();
       this.setState({
         user: undefined,
       });

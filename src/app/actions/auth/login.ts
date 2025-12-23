@@ -1,31 +1,45 @@
-"use server";
-
 import { User } from "@/utils/interfaces/User";
+import {API_METHODS} from "@/utils/enum/ApiMethods";
+import { getCookies } from "@/utils/actions/GetCookies";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
-import { getServerSession } from "@/utils/actions/GetServerSession";
+
 
 export const login = async (loginData: User) => {
-  const { supabase } = await getServerSession();
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL_API_URL}/users/login`,
+      {
+        method: API_METHODS.POST,
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: await getCookies(),
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email: loginData.email,
+          password: loginData.password,
+        }),
+      }
+    );
 
-  if (!loginData.email || !loginData.password) {
+    const data = await res.json();
+
+    if (!res.ok) {
+      return {
+        success: false,
+        message: data.message || NOTIFY_MESSAGES.LOGIN_FAILED,
+      };
+    }
+
+    return {
+      success: true,
+      user: data.user,
+      message: data.message,
+    };
+  } catch  {
     return {
       success: false,
-      message: NOTIFY_MESSAGES.ALL_FIELDS_REQUIRED,
+      message: NOTIFY_MESSAGES.NETWORK_ERROR,
     };
   }
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: loginData.email,
-    password: loginData.password,
-  });
-
-  if (error) {
-    return { success: false, message: error.message };
-  }
-
-  return {
-    success: true,
-    user: data.user,
-    message: NOTIFY_MESSAGES.LOGIN_SUCCESS,
-  };
-}
+};

@@ -4,21 +4,24 @@ import type { NextRequest } from "next/server";
 import { getServerSession } from "@/utils/actions/GetServerSession";
 
 export async function proxy(req: NextRequest) {
-  const { pathname, searchParams } = req.nextUrl;
+  const { pathname } = req.nextUrl;
 
-  const { supabase, session } = await getServerSession();
+  const sb_access_token = req.cookies.get("sb-access-token")?.value;
+  const sb_refresh_token = req.cookies.get("sb-refresh-token")?.value;
 
-  if ((pathname === "/" || pathname === "/profile") && !session) {
+  const { supabase } = await getServerSession();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser(sb_access_token);
+
+  if (
+    (pathname === "/" || pathname === "/profile") &&
+    !user &&
+    !sb_access_token &&
+    !sb_refresh_token
+  ) {
     return NextResponse.redirect(new URL("/auth/login", req.url));
-  }
-
-  if (pathname === "/auth/resetPassword") {
-    const code = searchParams.get("code") || "";
-    
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
-      return NextResponse.redirect(new URL("/auth/login", req.url));
-    }
   }
 
   return NextResponse.next();

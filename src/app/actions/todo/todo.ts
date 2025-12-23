@@ -1,230 +1,175 @@
-"use server";
-
-import { db } from "@/db";
-import { eq, and, isNull } from "drizzle-orm";
-
-import { todos } from "@/db/schemas/todo";
 import { Todo } from "@/utils/interfaces/Todo";
-import { getUser } from "@/app/actions/auth/user";
+import { API_METHODS } from "@/utils/enum/ApiMethods";
+import { getCookies } from "@/utils/actions/GetCookies";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
-import { getServerSession } from "@/utils/actions/GetServerSession";
 
-const getTodos = async () => {
+
+const BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL_API_URL}/todos`;
+
+export const getTodos = async () => {
   try {
-    const { session, error } = await getServerSession();
-    const userData = await getUser();
+    const res = await fetch(BASE_URL, {
+      method: API_METHODS.GET,
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: await getCookies(),
+      },
+      credentials: "include",
+    } as RequestInit);
 
-    if (error || !session || !userData?.id) {
+    const data = await res.json();
+    
+    if (!res.ok) {
       return {
         success: false,
         todos: [],
-        message: NOTIFY_MESSAGES.UNAUTHORIZED,
+        message: data.message || NOTIFY_MESSAGES.SERVER_ERROR,
       };
     }
 
-    const todoList = await db
-      .select()
-      .from(todos)
-      .where(
-        and(eq(todos.userId, userData?.id as string), isNull(todos.deletedAt))
-      );
-
-    const todoss = todoList.map((todo) => ({
-      id: todo.id,
-      taskName: todo.taskName,
-      description: todo.description ?? "",
-      status: todo.status,
-      createdAt: todo.createdAt,
-      updatedAt: todo.updatedAt,
-      deletedAt: todo.deletedAt,
-    }));
 
     return {
       success: true,
-      todos: todoss,
+      todos: data.todos || [],
     };
   } catch {
     return {
       success: false,
       todos: [],
-      message: NOTIFY_MESSAGES.SERVER_ERROR,
+      message: NOTIFY_MESSAGES.NETWORK_ERROR,
     };
   }
 };
 
-const addTodo = async (data: Todo) => {
+export const addTodo = async (todo: Todo) => {
   try {
-    const { session, error } = await getServerSession();
-    const userData = await getUser();
+    const res = await fetch(BASE_URL, {
+      method: API_METHODS.POST,
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: await getCookies(),
+      },
+      credentials: "include",
+      body: JSON.stringify(todo),
+    });
 
-    if (error || !session || !userData?.id) {
+    const data = await res.json();
+
+    if (!res.ok) {
       return {
         success: false,
-        message: NOTIFY_MESSAGES.UNAUTHORIZED,
+        message: data.message || NOTIFY_MESSAGES.SERVER_ERROR,
       };
     }
 
-    const [newTodo] = await db
-      .insert(todos)
-      .values({
-        userId: userData.id,
-        taskName: data.taskName,
-        description: data.description,
-        status: data.status ?? false,
-        createdBy: userData.id,
-        createdAt: new Date(),
-      })
-      .returning();
-
     return {
       success: true,
-      newTodo,
-      message: NOTIFY_MESSAGES.TODO_ADD_SUCCESS,
+      newTodo: data.newTodo,
+      message: data.message,
     };
   } catch {
     return {
       success: false,
-      message: NOTIFY_MESSAGES.SERVER_ERROR,
+      message: NOTIFY_MESSAGES.NETWORK_ERROR,
     };
   }
 };
 
-const updateTodo = async (data: Partial<Todo>) => {
+export const updateTodo = async (todo: Partial<Todo>) => {
   try {
-    const { session } = await getServerSession();
-    const userData = await getUser();
+    const res = await fetch(`${BASE_URL}/${todo.id}`, {
+      method: API_METHODS.PUT,
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: await getCookies(),
+      },
+      credentials: "include",
+      body: JSON.stringify(todo),
+    });
 
-    if (!session || !userData?.id) {
-      throw new Error(NOTIFY_MESSAGES.UNAUTHORIZED);
-    }
+    const data = await res.json();
 
-    const [existingTodo] = await db
-      .select()
-      .from(todos)
-      .where(
-        and(eq(todos.id, data.id as string), eq(todos.userId, userData.id))
-      );
-
-    if (!existingTodo) {
+    if (!res.ok) {
       return {
         success: false,
-        message: NOTIFY_MESSAGES.TODO_NOT_FOUND,
+        message: data.message || NOTIFY_MESSAGES.SERVER_ERROR,
       };
     }
 
-    const [updatedTodo] = await db
-      .update(todos)
-      .set({
-        taskName: data.taskName,
-        description: data.description,
-        updatedBy: userData.id,
-        updatedAt: new Date(),
-      })
-      .where(eq(todos.id, data.id as string))
-      .returning();
-
     return {
       success: true,
-      updatedTodo,
-      message: NOTIFY_MESSAGES.TODO_UPDATE_SUCCESS,
+      updatedTodo: data.updatedTodo,
+      message: data.message,
     };
   } catch {
     return {
       success: false,
-      message: NOTIFY_MESSAGES.SERVER_ERROR,
+      message: NOTIFY_MESSAGES.NETWORK_ERROR,
     };
   }
 };
 
-const deleteTodo = async (id: string) => {
+export const deleteTodo = async (id: string) => {
   try {
-    const { session } = await getServerSession();
-    const userData = await getUser();
+    const res = await fetch(`${BASE_URL}/${id}`, {
+      method: API_METHODS.DELETE,
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: await getCookies(),
+      },
+      credentials: "include",
+    });
 
-    if (!session || !userData?.id) {
+    const data = await res.json();
+
+    if (!res.ok) {
       return {
         success: false,
-        message: NOTIFY_MESSAGES.UNAUTHORIZED,
+        message: data.message || NOTIFY_MESSAGES.SERVER_ERROR,
       };
     }
-
-    const [existingTodo] = await db
-      .select()
-      .from(todos)
-      .where(and(eq(todos.id, id), eq(todos.userId, userData.id)));
-
-    if (!existingTodo) {
-      return {
-        success: false,
-        message: NOTIFY_MESSAGES.TODO_NOT_FOUND,
-      };
-    }
-
-    await db
-      .update(todos)
-      .set({
-        deletedBy: userData.id,
-        deletedAt: new Date(),
-      })
-      .where(eq(todos.id, id));
 
     return {
       success: true,
-      message: NOTIFY_MESSAGES.TODO_DELETE_SUCCESS,
+      message: data.message,
     };
   } catch {
     return {
       success: false,
-      message: NOTIFY_MESSAGES.SERVER_ERROR,
+      message: NOTIFY_MESSAGES.NETWORK_ERROR,
     };
   }
 };
 
-const toggleTodoStatus = async (id: string) => {
+export const toggleTodoStatus = async (id: string) => {
   try {
-    const { session } = await getServerSession();
-    const userData = await getUser();
+    const res = await fetch(`${BASE_URL}/${id}/toggle-status`, {
+      method: API_METHODS.PATCH,
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: await getCookies(),
+      },
+      credentials: "include",
+    });
 
-    if (!session || !userData?.id) {
+    const data = await res.json();
+
+    if (!res.ok) {
       return {
         success: false,
-        message: NOTIFY_MESSAGES.UNAUTHORIZED,
+        message: data.message || NOTIFY_MESSAGES.SERVER_ERROR,
       };
     }
-
-    const [existingTodo] = await db
-      .select()
-      .from(todos)
-      .where(and(eq(todos.id, id), eq(todos.userId, userData.id)));
-
-    if (!existingTodo) {
-      return {
-        success: false,
-        message: NOTIFY_MESSAGES.TODO_NOT_FOUND,
-      };
-    }
-
-    const [updatedTodo] = await db
-      .update(todos)
-      .set({
-        status: !existingTodo.status,
-        updatedBy: userData?.id,
-        updatedAt: new Date(),
-      })
-      .where(eq(todos.id, id))
-      .returning();
 
     return {
       success: true,
-      updatedTodo,
-      message: NOTIFY_MESSAGES.TODO_COMPLETE_SUCCESS,
+      updatedTodo: data.updatedTodo,
+      message: data.message,
     };
   } catch {
     return {
       success: false,
-      message: NOTIFY_MESSAGES.SERVER_ERROR,
+      message: NOTIFY_MESSAGES.NETWORK_ERROR,
     };
   }
 };
-
-export { getTodos, addTodo, updateTodo, deleteTodo, toggleTodoStatus };

@@ -40,4 +40,5 @@ export const NOTIFY_MESSAGES = {
   EMAIL_NOT_REGISTERED: "Email is not registered.",
   PROFILE_UPDATED_SUCCESS: "Profile updated successfully.",
   PROFILE_UPDATE_FAILED: "Failed to update profile.",
+  NETWORK_ERROR: "Network error",
 };
