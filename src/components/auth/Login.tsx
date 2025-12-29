@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -15,7 +14,6 @@ import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { LoginSchema } from "@/utils/validationSchemas/LoginSchema";
 
 const Login = () => {
-  const router = useRouter();
 
   const {
     register,
@@ -28,7 +26,7 @@ const Login = () => {
 
   const onSubmit = async (data: User) => {
     try {
-      await userController.login(data, router);
+      await userController.login(data);
     } catch {
       toast.error(NOTIFY_MESSAGES.LOGIN_FAILED);
     }

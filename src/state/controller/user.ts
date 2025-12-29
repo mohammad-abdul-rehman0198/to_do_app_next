@@ -99,13 +99,12 @@ class UserController extends StateController<Partial<UserState>> {
     }
   }
 
-  async login(user: User, router: ReturnType<typeof useRouter>) {
+  async login(user: User) {
     const { success, message } = await login(user);
     if (success) {
+      window.location.replace('/');
       toast.success(message);
-      router.push("/");
-      router.refresh();
-    } else {
+    } else { 
       toast.error(message);
     }
   }
