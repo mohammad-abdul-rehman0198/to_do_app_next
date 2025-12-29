@@ -9,6 +9,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { ButtonType } from "@/utils/enum/ButtonType";
+import { Message } from "@/utils/interfaces/Message";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import { ChatMessage } from "@/components/chatbot/ChatMessage";
 import { getChatbotResponse } from "@/app/actions/chatbot/chatbot";
@@ -16,10 +17,6 @@ import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { FloatingButton } from "@/components/chatbot/FloatingButton";
 import { BotTypingLoader } from "@/components/chatbot/BotTypingLoader";
 
-interface Message {
-  sender: "user" | "bot";
-  text: string;
-}
 
 interface FormValues {
   message: string;
@@ -36,9 +33,11 @@ export const Chatbot = () => {
       text: "👋 Hi there! I’m your Todo Assistant. How can I help you today?",
     },
   ]);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 

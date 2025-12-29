@@ -1,9 +1,6 @@
-interface ChatMessageProps {
-  sender: "user" | "bot";
-  text: string;
-}
+import { Message } from "@/utils/interfaces/Message";
 
-export const ChatMessage = ({ sender, text }: ChatMessageProps) => {
+export const ChatMessage = ({ sender, text }: Message) => {
   return (
     <div
       className={`p-3 rounded-xl max-w-[75%] wrap-break-words shadow ${
