@@ -14,7 +14,6 @@ import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { LoginSchema } from "@/utils/validationSchemas/LoginSchema";
 
 const Login = () => {
-
   const {
     register,
     handleSubmit,

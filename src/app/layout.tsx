@@ -8,6 +8,7 @@ import { Todo } from "@/utils/interfaces/Todo";
 import { getUser } from "@/app/actions/auth/user";
 import { getTodos } from "@/app/actions/todo/todo";
 import Header from "@/components/dashboard/Header";
+import { Chatbot } from "@/components/chatbot/Chatbot";
 import StateHydrator from "@/components/StateHydrator";
 import JotaiProvider from "@/utils/providers/JotaiProvider";
 
@@ -43,6 +44,7 @@ export default async function RootLayout({
           <Header />
           {children}
            <StateHydrator user={ userData.user as User } todos={ todoList as Todo[] } />
+           {userData.user && <Chatbot />}
         </JotaiProvider>
       </body>
     </html>

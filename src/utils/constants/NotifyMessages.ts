@@ -41,4 +41,5 @@ export const NOTIFY_MESSAGES = {
   PROFILE_UPDATED_SUCCESS: "Profile updated successfully.",
   PROFILE_UPDATE_FAILED: "Failed to update profile.",
   NETWORK_ERROR: "Network error",
+  CHATBOT_RESPONSE_FAILED: "Failed to get chatbot response.",
 };

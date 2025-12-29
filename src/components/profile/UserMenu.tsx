@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 import Button from "@/components/ui/Button";
 import { ButtonType } from "@/utils/enum/ButtonType";
@@ -28,7 +28,7 @@ const UserMenu = ({ onClose }: UserMenuProps) => {
     await userController.clearUser();
     setIsLoading(false);
     onClose();
-    router.push("/auth/login");
+    window.location.replace('/auth/login');
   };
 
   return (
