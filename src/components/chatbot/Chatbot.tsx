@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, X } from "lucide-react";
+import { Send, X, Bot } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useState, useRef, useEffect } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -9,6 +9,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { ButtonType } from "@/utils/enum/ButtonType";
 import { Message } from "@/utils/interfaces/Message";
+import { userController } from "@/state/controller/user";
 import { ButtonVariant } from "@/utils/enum/ButtonVariant";
 import { ChatMessage } from "@/components/chatbot/ChatMessage";
 import { getChatbotResponse } from "@/app/actions/chatbot/chatbot";
@@ -34,6 +35,8 @@ export const Chatbot = () => {
   const [error, setError] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const { user } = userController.useState(["user"]);
 
   const {
     register,
@@ -62,12 +65,12 @@ export const Chatbot = () => {
         success,
         data: chatbotResponse,
         message,
-      } = await getChatbotResponse(messageText);
+      } = await getChatbotResponse(user?.id || "", messageText, 100);
 
       if (success) {
         setMessages((prev) => [
           ...prev,
-          { sender: "bot", text: chatbotResponse },
+          { sender: "bot", text: chatbotResponse || "" },
         ]);
       } else {
         setMessages((prev) => [
@@ -97,9 +100,17 @@ export const Chatbot = () => {
       <FloatingButton onClick={() => setIsOpen(!isOpen)} />
 
       {isOpen && (
-        <div className="fixed bottom-22 max-md:right-2 md:right-6 w-[95vw] max-w-sm sm:max-w-md md:w-96 h-[70vh] sm:h-[80vh]  bg-gray-900 text-white rounded-xl shadow-2xl flex flex-col overflow-hidden z-50">
+        <div className="fixed  bottom-22 max-md:right-2 md:right-6 w-[95vw] max-w-sm sm:max-w-md md:w-96 h-[70vh] sm:h-[80vh]  bg-gray-900 text-white rounded-xl shadow-2xl flex flex-col overflow-hidden z-50">
           <div className="bg-gray-800 px-4 py-3 flex justify-between items-center border-b border-gray-700">
-            <h2 className="font-semibold text-lg">Todo Chatbot</h2>
+            <div className="flex flex-col ">
+              <div className="flex items-center gap-2">
+              <Bot size={20} />
+              <h2 className="font-semibold text-lg">Todo Assistant</h2>
+              </div>
+              <p className="text-sm text-gray-400">
+                Ask me anything about your todos
+              </p>
+            </div>
             <Button
               type={ButtonType.BUTTON}
               variant={ButtonVariant.TEXT}

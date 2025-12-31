@@ -2,18 +2,29 @@ import { API_METHODS } from "@/utils/enum/ApiMethods";
 import { getCookies } from "@/utils/actions/GetCookies";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 
-export const getChatbotResponse = async (message: string) => {
+interface ChatbotResponse {
+  success: boolean;
+  data?: string;
+  message?: string;
+}
+
+export const getChatbotResponse = async (
+  userId: string,
+  message: string,
+  match_count = 5
+): Promise<ChatbotResponse> => {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL_API_URL}/chatbot`,
+      `https://dzglfsbrferahkkdswua.supabase.co/functions/v1/get-chatbot`,
       {
         method: API_METHODS.POST,
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
           Cookie: await getCookies(),
         },
         credentials: "include",
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ record: { userId, message, match_count } }),
       }
     );
 
