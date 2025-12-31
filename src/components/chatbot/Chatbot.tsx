@@ -1,6 +1,5 @@
 "use client";
 
-import * as yup from "yup";
 import { Send, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useState, useRef, useEffect } from "react";
@@ -16,15 +15,11 @@ import { getChatbotResponse } from "@/app/actions/chatbot/chatbot";
 import { NOTIFY_MESSAGES } from "@/utils/constants/NotifyMessages";
 import { FloatingButton } from "@/components/chatbot/FloatingButton";
 import { BotTypingLoader } from "@/components/chatbot/BotTypingLoader";
-
+import { ChatbotSchema } from "@/utils/validationSchemas/ChatbotSchema";
 
 interface FormValues {
   message: string;
 }
-
-const schema = yup.object({
-  message: yup.string().trim().required("Message is required"),
-});
 
 export const Chatbot = () => {
   const [messages, setMessages] = useState<Message[]>([
@@ -37,7 +32,6 @@ export const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -46,8 +40,8 @@ export const Chatbot = () => {
     handleSubmit,
     reset,
     formState: { errors, isValid, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: yupResolver(schema),
+  } = useForm({
+    resolver: yupResolver(ChatbotSchema),
   });
 
   const scrollToBottom = () => {
@@ -103,7 +97,7 @@ export const Chatbot = () => {
       <FloatingButton onClick={() => setIsOpen(!isOpen)} />
 
       {isOpen && (
-        <div className="fixed bottom-20 right-6 w-[95vw] max-w-sm sm:max-w-md md:w-96 h-[70vh] sm:h-[80vh] bg-gray-900 text-white rounded-xl shadow-2xl flex flex-col overflow-hidden z-50">
+        <div className="fixed bottom-22 max-md:right-2 md:right-6 w-[95vw] max-w-sm sm:max-w-md md:w-96 h-[70vh] sm:h-[80vh]  bg-gray-900 text-white rounded-xl shadow-2xl flex flex-col overflow-hidden z-50">
           <div className="bg-gray-800 px-4 py-3 flex justify-between items-center border-b border-gray-700">
             <h2 className="font-semibold text-lg">Todo Chatbot</h2>
             <Button
